@@ -53,7 +53,7 @@ function endRecord(game,level,score,success,extra={}){if(activeSaved)return;acti
 backBtn.onclick=()=>{stopTimer();renderHome()}; homeBtn.onclick=()=>{stopTimer();renderHome()};
 dialog.addEventListener('close',()=>{const level=dialog.returnValue;if(level&&level!=='cancel'&&pendingGame)startGame(pendingGame,level)});
 
-function renderHome(){activeSaved=false;setHeader('Sala Giochi','Un solo giocatore · archivio locale · v1.3.0');const total=store.history.length,wins=store.history.filter(x=>x.success).length,best=store.history.reduce((m,x)=>Math.max(m,x.score||0),0);app.innerHTML=`
+function renderHome(){activeSaved=false;setHeader('Sala Giochi','Un solo giocatore · archivio locale · v1.4.0');const total=store.history.length,wins=store.history.filter(x=>x.success).length,best=store.history.reduce((m,x)=>Math.max(m,x.score||0),0);app.innerHTML=`
 <div class="screen-theme home-theme" style="${paletteVars(getHomePalette())}">
 <section class="hero"><div class="hero-kicker">🎮 SALA GIOCHI</div><h2>Cosa vuoi giocare?</h2><p>Scegli una sfida, imposta il livello e gioca. Tutto resta memorizzato soltanto su questo dispositivo.</p><div class="hero-note"><span>● 4 livelli</span><span>◉ Offline</span><span>▣ Archivio locale</span></div></section>
 <button class="daily-card" onclick="renderDaily()"><span class="daily-icon">⭐</span><span><strong>Sfida del giorno</strong><small>Una nuova prova da affrontare ogni giorno</small></span><span class="card-arrow">›</span></button>
@@ -137,7 +137,79 @@ hard:{title:'Il vagone sigillato',intro:'Il treno è fermo in galleria. Il vagon
 ['Sequenza: 2, 5, 11, 23, 47, ?','95','Ogni termine è il precedente ×2 +1.'],['Scrivi in cifre romane il numero 14.','XIV','10 + 4 = X + IV.'],['Se ogni lettera avanza di 2, CASA diventa ECUC. Decodifica NWPC tornando indietro di 2.','LUNA','N→L, W→U, P→N, C→A.'],['Un quadrato ha perimetro 36. Quanto misura il lato?','9','36÷4.'],['Qual è il numero successivo: 1, 2, 6, 24, 120, ?','720','Sono fattoriali.'],['Scrivi al contrario la parola ENIGMA.','AMGINE','Inverti l’ordine delle lettere.'],['Quante diagonali ha un quadrato?','2','Un quadrato ha due diagonali.'],['Ultima chiave: 7×8−6.','50','56−6.']]},
 extreme:{title:'Il laboratorio segreto',intro:'L’allarme è attivo, la porta blindata è bloccata e il sistema si resetta a ogni errore. Devi combinare indizi, codici e deduzioni per uscire.',items:['🗝️ Chiave','💳 Tessera','📝 Appunto','🧪 Fiala'],spots:['Monitor','Cassaforte','Porta','Scrivania'],steps:[
 ['Dalla console ottieni la serie 4, 9, 19, 39, 79, ?. Qual è il valore successivo?','159','Ogni numero raddoppia e si aggiunge 1.'],['Su un badge c’è scritto: “Prendi la parola LUNA e sposta ogni lettera avanti di 1”. Che parola ottieni?','MVOB','L→M, U→V, N→O, A→B.'],['Un monitor mostra il numero romano XXIV. Converti in cifra araba.','24','XXIV = 20 + 4.'],['In una teca leggi: “Il codice è la differenza tra 144 e 89”.','55','144 − 89 = 55.'],['Una cassaforte richiede la terza lettera della parola CRITTOGRAFIA.','I','C=1, R=2, I=3.'],['Un messaggio dice: “Se la chiave è 7, calcola 7×7−8”.','41','49 − 8 = 41.'],['Sul pannello trovi: 2, 3, 5, 8, 12, ?. Inserisci il successivo.','17','Gli incrementi sono +1,+2,+3,+4,+5.'],['Una luce rossa lampeggia con la scritta “RADQ81”. Interpreta il testo e inserisci il valore.','9','Radice quadrata di 81.'],['L’ultima serratura richiede il contrario di AMOR.','ROMA','Inverti la parola.'],['Codice finale: somma i valori 24 e 41 e sottrai 9.','56','24 + 41 − 9 = 56.']]}};
-function startEscape(level){const e=ESCAPES[level];let i=0,score=0,hints={easy:3,medium:2,hard:1,extreme:1}[level];app.innerHTML=gameShell('escape',level,`<div class="progress"><span id="escProg"></span></div><div class="escape-scene-wrap"><div class="escape-stage level-${level}"><div class="escape-title"><h2>${e.title}</h2><p>${e.intro}</p></div><div class="escape-console"></div><div class="escape-safe"></div><div class="escape-desk"></div><div class="escape-door"></div><div class="escape-hotspots">${(e.spots||[]).map((s,idx)=>`<div class="hotspot" style="${['left:8%;top:42%;','left:44%;top:36%;','right:7%;top:50%;','left:20%;bottom:16%;'][idx]||''}">${s}</div>`).join('')}</div><div class="escape-particles"><span></span><span></span><span></span><span></span><span></span></div></div><div class="escape-inventory">${(e.items||[]).map(x=>{const parts=x.split(' ');return `<div class="item-pill"><span>${parts.shift()}</span>${parts.join(' ')}</div>`}).join('')}<div class="item-pill"><span>💡</span>Indizi ${hints}</div></div></div><div id="escBox"></div>`);startTimer();render();function render(){if(i>=e.steps.length){endRecord('escape',level,score,true);document.getElementById('escBox').innerHTML=`<div class="message ok">🔓 Uscita sbloccata. Punteggio: <b>${score}</b>.</div>`;return}document.getElementById('escProg').style.width=`${i/e.steps.length*100}%`;const [q]=e.steps[i];document.getElementById('escBox').innerHTML=`<div class="escape-question"><h3>Enigma ${i+1}/${e.steps.length}</h3><p>${q}</p></div><div class="answer-row" style="margin-top:12px"><input id="escInput" autocomplete="off" placeholder="Inserisci codice o parola"><button id="escOk" class="primary">Prova</button></div><div class="actions"><button id="escHint" class="secondary">💡 Indizio (${hints})</button></div><div id="escMsg"></div>`;document.getElementById('escOk').onclick=check;document.getElementById('escInput').onkeydown=x=>{if(x.key==='Enter')check()};document.getElementById('escHint').onclick=()=>{if(!hints)return toast('Nessun indizio rimasto');hints--;score=Math.max(0,score-20);document.getElementById('escHint').textContent=`💡 Indizio (${hints})`;document.getElementById('escMsg').innerHTML=`<div class="message">${e.steps[i][2]}</div>`;const inv=document.querySelector('.escape-inventory .item-pill:last-child');if(inv)inv.innerHTML=`<span>💡</span>Indizi ${hints}`};document.getElementById('escInput').focus()}function check(){const ans=e.steps[i][1],v=document.getElementById('escInput').value;if(norm(v)===norm(ans)){score+=100;i++;render()}else{score=Math.max(0,score-10);toast('Il codice non è corretto')}}}
+function startEscape(level){
+  const puzzles={
+    easy:{monitorQ:'Completa la sequenza 2, 4, 6, 8, ?',monitorA:'10',safe:'731',note:'Sul foglio c’è scritto: “Il monitor vuole il numero successivo della sequenza. Quando si accende, annota il codice a 3 cifre.”'},
+    medium:{monitorQ:'Completa: 3, 6, 12, 24, ?',monitorA:'48',safe:'482',note:'Una nota piegata dice: “Il monitor raddoppia. La cassaforte usa il risultato seguito da 2.”'},
+    hard:{monitorQ:'Completa: 2, 5, 11, 23, 47, ?',monitorA:'95',safe:'951',note:'Appunto cifrato: “×2+1. Il codice cassaforte è il risultato seguito dalla prima cifra del foglio.”'},
+    extreme:{monitorQ:'Cinque interruttori A–E: A acceso ⇒ B spento; C acceso ⇒ D acceso; E acceso ⇒ A spento. La configurazione mostra A=1,C=1,E=0. Quali stati devono avere B e D? Rispondi come due cifre, prima B poi D.',monitorA:'01',safe:'0147',note:'Appunto tecnico: “Sul monitor, 1=acceso e 0=spento. Dopo la soluzione aggiungi 47 per ottenere il codice della cassaforte.”'}
+  };
+  const pz=puzzles[level]||puzzles.medium;
+  let inventory=[],selected=null,flags={note:false,monitor:false,safe:false,key:false,escaped:false},score=0,hints={easy:3,medium:2,hard:1,extreme:1}[level];
+  app.innerHTML=gameShell('escape',level,`
+    <div class="escape-real">
+      <div class="escape-hud"><span>Obiettivo: trova una via d’uscita</span><span id="escStatus">Esplora la stanza</span></div>
+      <div class="escape-room-live" id="escapeRoom">
+        <div class="escape-room-bg"></div>
+        <div class="room-light light-a"></div><div class="room-light light-b"></div>
+        <button class="room-hotspot hs-monitor" data-spot="monitor" aria-label="Monitor"><span>⌕</span><b>Monitor</b></button>
+        <button class="room-hotspot hs-safe" data-spot="safe" aria-label="Cassaforte"><span>⌕</span><b>Cassaforte</b></button>
+        <button class="room-hotspot hs-desk" data-spot="desk" aria-label="Scrivania"><span>⌕</span><b>Scrivania</b></button>
+        <button class="room-hotspot hs-door" data-spot="door" aria-label="Porta"><span>⌕</span><b>Porta</b></button>
+        <div class="monitor-glow" id="monitorGlow"></div>
+        <div class="safe-anim" id="safeAnim"><div class="safe-door-live"></div></div>
+        <div class="door-anim" id="doorAnim"><div class="door-panel-live"></div></div>
+        <div class="drawer-anim" id="drawerAnim"></div>
+        <div class="floating-sparks"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="escape-inventory-live"><div><strong>Inventario</strong><small id="selectedInfo">Nessun oggetto selezionato</small></div><div id="inventorySlots" class="inventory-slots"></div><button id="escHint" class="secondary">💡 ${hints}</button></div>
+      <div id="escapePanel" class="escape-panel-live"><div class="escape-panel-placeholder">Tocca un punto luminoso nella stanza.</div></div>
+    </div>`);
+  startTimer();
+  renderInventory();
+  document.querySelectorAll('.room-hotspot').forEach(b=>b.onclick=()=>openSpot(b.dataset.spot));
+  document.getElementById('escHint').onclick=()=>{
+    if(!hints)return toast('Nessun indizio rimasto'); hints--; score=Math.max(0,score-20); document.getElementById('escHint').textContent=`💡 ${hints}`;
+    const hint=!flags.note?'La scrivania sembra avere un cassetto socchiuso.':!flags.monitor?'L’appunto trovato parla del monitor.':!flags.safe?'Il monitor ti ha dato ciò che serve alla cassaforte.':!flags.key?'Apri davvero la cassaforte: dentro c’è qualcosa.':'Seleziona la chiave nell’inventario e poi tocca la porta.';
+    showPanel('Indizio',hint,'💡');
+  };
+  function openSpot(spot){
+    if(flags.escaped)return;
+    if(spot==='desk'){
+      const d=document.getElementById('drawerAnim'); d.classList.remove('drawer-pop'); void d.offsetWidth; d.classList.add('drawer-pop');
+      if(!flags.note){
+        flags.note=true; score+=50; addItem('note','📝','Appunto');
+        showPanel('Cassetto aperto',`${pz.note}<br><br><b>Hai raccolto un appunto.</b>`,'🗄️');
+      } else showPanel('Scrivania','Il cassetto è già aperto. Non c’è altro di utile.','🗄️');
+      return;
+    }
+    if(spot==='monitor'){
+      const g=document.getElementById('monitorGlow'); g.classList.add('active');
+      if(!flags.note){showPanel('Monitor','Lo schermo si accende, ma non capisci cosa inserire. Forse serve un indizio trovato nella stanza.','🖥️');return;}
+      if(flags.monitor){showPanel('Monitor',`ACCESSO AUTORIZZATO.<br>Codice memorizzato: <b>${pz.safe}</b>`,'🖥️');return;}
+      showPuzzle('Monitor',pz.monitorQ,pz.monitorA,()=>{flags.monitor=true;score+=120;document.getElementById('monitorGlow').classList.add('solved');showPanel('Monitor sbloccato',`La console lampeggia e mostra: <b>CODICE CASSAFORTE ${pz.safe}</b>.`,'🖥️')});
+      return;
+    }
+    if(spot==='safe'){
+      if(!flags.monitor){shake('safeAnim');showPanel('Cassaforte','Il tastierino è attivo, ma non hai ancora ricavato il codice.','🔒');return;}
+      if(flags.safe){showPanel('Cassaforte aperta',flags.key?'È vuota. Hai già preso la chiave.':'Dentro c’è una chiave.','🔓'); if(!flags.key)collectKey();return;}
+      showCodePanel('Cassaforte',pz.safe,()=>{flags.safe=true;score+=150;document.getElementById('safeAnim').classList.add('open');setTimeout(()=>{showPanel('Cassaforte aperta','Lo sportello si apre. Dentro trovi una <b>chiave metallica</b>.','🔓');collectKey()},650)});
+      return;
+    }
+    if(spot==='door'){
+      if(!flags.key){shake('doorAnim');showPanel('Porta blindata','La serratura è meccanica. Serve una chiave.','🚪');return;}
+      if(selected!=='key'){showPanel('Porta blindata','Hai una chiave nell’inventario. Selezionala prima di usarla sulla porta.','🚪');return;}
+      flags.escaped=true;score+=200;document.getElementById('doorAnim').classList.add('open');document.getElementById('escStatus').textContent='Uscita sbloccata';setTimeout(()=>{endRecord('escape',level,score,true);showPanel('Sei uscito!',`La porta si apre e la luce del corridoio invade la stanza.<br><br>Punteggio: <b>${score}</b>.`,'🏆')},900);
+    }
+  }
+  function addItem(id,icon,label){if(inventory.some(x=>x.id===id))return;inventory.push({id,icon,label});renderInventory();const panel=document.getElementById('inventorySlots');const el=panel.lastElementChild;if(el){el.classList.add('item-enter');setTimeout(()=>el.classList.remove('item-enter'),500)}}
+  function collectKey(){if(flags.key)return;flags.key=true;addItem('key','🗝️','Chiave');}
+  function renderInventory(){const el=document.getElementById('inventorySlots');el.innerHTML=inventory.length?inventory.map(x=>`<button class="inventory-item ${selected===x.id?'selected':''}" data-id="${x.id}"><span>${x.icon}</span><small>${x.label}</small></button>`).join(''):`<span class="inventory-empty">Vuoto</span>`;el.querySelectorAll('.inventory-item').forEach(b=>b.onclick=()=>{selected=selected===b.dataset.id?null:b.dataset.id;renderInventory();document.getElementById('selectedInfo').textContent=selected?`Selezionato: ${inventory.find(x=>x.id===selected)?.label}`:'Nessun oggetto selezionato'});}
+  function showPanel(title,html,icon=''){document.getElementById('escapePanel').innerHTML=`<div class="panel-head"><span>${icon}</span><strong>${title}</strong></div><div class="panel-body">${html}</div>`;}
+  function showPuzzle(title,q,answer,onOk){document.getElementById('escapePanel').innerHTML=`<div class="panel-head"><span>🧩</span><strong>${title}</strong></div><div class="panel-body"><p>${q}</p><div class="answer-row"><input id="escapePuzzleInput" autocomplete="off"><button class="primary" id="escapePuzzleOk">Conferma</button></div><div id="escapePuzzleMsg"></div></div>`;const inp=document.getElementById('escapePuzzleInput');const check=()=>{if(norm(inp.value)===norm(answer)){onOk()}else{score=Math.max(0,score-10);shake('monitorGlow');document.getElementById('escapePuzzleMsg').innerHTML='<div class="message bad">Risposta non corretta.</div>'}};document.getElementById('escapePuzzleOk').onclick=check;inp.onkeydown=e=>{if(e.key==='Enter')check()};inp.focus();}
+  function showCodePanel(title,code,onOk){document.getElementById('escapePanel').innerHTML=`<div class="panel-head"><span>🔢</span><strong>${title}</strong></div><div class="panel-body"><p>Inserisci il codice.</p><div class="code-pad"><input id="safeCodeInput" inputmode="numeric" autocomplete="off" maxlength="4"><button class="primary" id="safeCodeOk">Apri</button></div><div id="safeCodeMsg"></div></div>`;const inp=document.getElementById('safeCodeInput');const check=()=>{if(norm(inp.value)===norm(code)){onOk()}else{score=Math.max(0,score-10);shake('safeAnim');document.getElementById('safeCodeMsg').innerHTML='<div class="message bad">Codice errato.</div>'}};document.getElementById('safeCodeOk').onclick=check;inp.onkeydown=e=>{if(e.key==='Enter')check()};inp.focus();}
+  function shake(id){const el=document.getElementById(id);if(!el)return;el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
+}
 
 // ---------- Partita mista ----------
 function startMixed(level){const aq=shuffle(ANAGRAMS[level]).slice(0,2),qq=shuffle(QUIZ[level]).slice(0,2),lq=shuffle(LOGIC[level]).slice(0,2);const tasks=shuffle([

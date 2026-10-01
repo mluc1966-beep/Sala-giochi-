@@ -30,6 +30,8 @@ IMPORTANTE
 Per service worker e installazione PWA l'app va aperta tramite HTTPS (GitHub Pages va bene) oppure localhost. Aprire index.html direttamente come file locale permette molte funzioni ma non garantisce il service worker.
 
 
-Aggiornamento v1.3.0: aggiunto il livello Difficilissimo e un restyling grafico dei giochi, con Escape Room animata.
+Aggiornamento v1.4.0: aggiunto il livello Difficilissimo e un restyling grafico dei giochi, con Escape Room animata.
 
-Aggiornamento v1.3.0: scelta palette per Home e per ciascun tipo di gioco, salvata in locale.
+Aggiornamento v1.4.0: scelta palette per Home e per ciascun tipo di gioco, salvata in locale.
+
+Aggiornamento v1.4.0: Escape Room realmente interattiva con hotspot cliccabili, inventario, oggetti, cassaforte, porta e animazioni visibili legate alle azioni.
