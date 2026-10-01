@@ -1,4 +1,4 @@
-SALA GIOCHI - V1.0.0
+SALA GIOCHI - V1.1.0
 
 CONTENUTO
 - Partita Mista

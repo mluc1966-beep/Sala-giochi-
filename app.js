@@ -32,24 +32,25 @@ function endRecord(game,level,score,success,extra={}){if(activeSaved)return;acti
 backBtn.onclick=()=>{stopTimer();renderHome()}; homeBtn.onclick=()=>{stopTimer();renderHome()};
 dialog.addEventListener('close',()=>{const level=dialog.returnValue;if(level&&level!=='cancel'&&pendingGame)startGame(pendingGame,level)});
 
-function renderHome(){activeSaved=false;setHeader('Sala Giochi','Un solo giocatore · archivio locale · v1.0.0');const total=store.history.length,wins=store.history.filter(x=>x.success).length,best=store.history.reduce((m,x)=>Math.max(m,x.score||0),0);app.innerHTML=`
-<section class="hero"><h2>🎲 Scegli la tua sfida</h2><p>Tutti i giochi funzionano senza account. Dati, partite e statistiche restano memorizzati solo su questo dispositivo.</p></section>
+function renderHome(){activeSaved=false;setHeader('Sala Giochi','Un solo giocatore · archivio locale · v1.1.0');const total=store.history.length,wins=store.history.filter(x=>x.success).length,best=store.history.reduce((m,x)=>Math.max(m,x.score||0),0);app.innerHTML=`
+<section class="hero"><div class="hero-kicker">🎮 SALA GIOCHI</div><h2>Cosa vuoi giocare?</h2><p>Scegli una sfida, imposta il livello e gioca. Tutto resta memorizzato soltanto su questo dispositivo.</p><div class="hero-note"><span>● 3 livelli</span><span>◉ Offline</span><span>▣ Archivio locale</span></div></section>
+<button class="daily-card" onclick="renderDaily()"><span class="daily-icon">⭐</span><span><strong>Sfida del giorno</strong><small>Una nuova prova da affrontare ogni giorno</small></span><span class="card-arrow">›</span></button>
+<div class="section-title"><h3>Scegli un gioco</h3><small>Facile · Medio · Difficile</small></div>
 <div class="grid">
-${gameCard('mixed','Partita Mista','Una sequenza di prove diverse')}
+${gameCard('mixed','Partita Mista','Sei prove diverse in una sola partita')}
 ${gameCard('sudoku','Sudoku','Griglia 9×9 con soluzione unica')}
 ${gameCard('wordsearch','Cerca-parole','Trova le parole nascoste')}
 ${gameCard('anagram','Anagrammi','Ricomponi le parole')}
 ${gameCard('quiz','Quiz','Cultura generale e curiosità')}
 ${gameCard('logic','Logica','Sequenze, deduzioni e codici')}
 ${gameCard('escape','Escape Room','Enigmi concatenati in una storia')}
-<button class="game-card" onclick="renderDaily()"><span>⭐</span><strong>Sfida del giorno</strong><small>Una sfida locale che cambia ogni giorno</small></button>
 </div>
-<div class="section-title"><h3>Statistiche rapide</h3><button class="secondary" onclick="renderArchive()">Archivio locale</button></div>
-<div class="stat-grid"><div class="stat"><b>${total}</b><span>Partite</span></div><div class="stat"><b>${wins}</b><span>Completate</span></div><div class="stat"><b>${total?Math.round(wins/total*100):0}%</b><span>Successo</span></div><div class="stat"><b>${best}</b><span>Miglior punteggio</span></div></div>
-<p class="footer-note">Nessun dato viene inviato a un server. Il browser conserva lo storico in memoria locale. È disponibile un backup manuale dall'Archivio locale.</p>`}
-function gameCard(id,name,desc){return `<button class="game-card" onclick="chooseDifficulty('${id}')"><span>${ICONS[id]}</span><strong>${name}</strong><small>${desc}</small></button>`}
+<div class="section-title"><h3>Le tue statistiche</h3><button class="secondary" onclick="renderArchive()">Apri archivio</button></div>
+<div class="stat-grid"><div class="stat"><b>${total}</b><span>Partite</span></div><div class="stat"><b>${wins}</b><span>Completate</span></div><div class="stat"><b>${total?Math.round(wins/total*100):0}%</b><span>Successo</span></div><div class="stat"><b>${best}</b><span>Record punti</span></div></div>
+<p class="footer-note">🔒 Nessun dato viene inviato a un server. Il browser conserva lo storico in memoria locale; dall'Archivio puoi esportare un backup JSON.</p>`}
+function gameCard(id,name,desc){return `<button class="game-card game-${id}" onclick="chooseDifficulty('${id}')"><span class="game-icon">${ICONS[id]}</span><strong>${name}</strong><small>${desc}</small><span class="mini-arrow">›</span></button>`}
 function chooseDifficulty(game){pendingGame=game;difficultyTitle.textContent=`${ICONS[game]} ${GAME_NAMES[game]} · livello`;dialog.showModal()}
-function gameShell(game,level,body){return `<section class="game-shell"><div class="game-head"><span class="badge">${ICONS[game]} ${GAME_NAMES[game]} · ${LEVEL_NAMES[level]}</span><span id="timer" class="timer">0:00</span></div>${body}</section>`}
+function gameShell(game,level,body){return `<section class="game-shell game-${game}"><div class="game-head"><span class="badge">${ICONS[game]} ${GAME_NAMES[game]} · ${LEVEL_NAMES[level]}</span><span id="timer" class="timer">0:00</span></div>${body}</section>`}
 function startGame(game,level){activeSaved=false;setHeader(GAME_NAMES[game],LEVEL_NAMES[level]);({sudoku:startSudoku,wordsearch:startWordSearch,anagram:startAnagram,quiz:startQuiz,logic:startLogic,escape:startEscape,mixed:startMixed}[game])(level)}
 
 // ---------- Sudoku ----------
