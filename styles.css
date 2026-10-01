@@ -107,3 +107,43 @@ linear-gradient(180deg,#18294d 0%,#0f1b35 45%,#0a1327 100%)}
 @keyframes pulseHot{0%,100%{transform:scale(1);box-shadow:0 0 0 1px rgba(255,221,133,.18),0 0 24px rgba(255,204,80,.18)}50%{transform:scale(1.035);box-shadow:0 0 0 1px rgba(255,221,133,.28),0 0 34px rgba(255,204,80,.28)}}
 @keyframes flicker{0%,100%{opacity:.86}50%{opacity:1}70%{opacity:.72}}
 @keyframes floatDust{0%{transform:translateY(0) scale(.9);opacity:0}20%{opacity:1}100%{transform:translateY(-38px) scale(1.15);opacity:0}}
+
+
+.inline-actions{display:flex;gap:8px;flex-wrap:wrap}
+.palette-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.palette-chip{display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;border:1px solid var(--line);background:#fff;font-weight:700;box-shadow:0 4px 12px rgba(31,42,68,.05)}
+.palette-chip.selected{outline:2px solid var(--p-a1,#6a5cff);border-color:transparent}
+.palette-chip .swatch{width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--s1),var(--s2),var(--s3));box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+.settings-list{display:grid;gap:10px}
+.setting-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.setting-row strong{display:block}.setting-row small{display:block;color:var(--muted);margin-top:4px}
+.palette-select{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;min-width:140px}
+.screen-theme{--p-s1:#0f1631;--p-s2:#1e2e68;--p-a1:#6a5cff;--p-a2:#29c7ff;--p-a3:#7dffb3}
+.home-theme .hero{background:linear-gradient(135deg,var(--p-s1) 0%,var(--p-s2) 58%,var(--p-a1) 120%)}
+.home-theme .hero-kicker{background:rgba(255,255,255,.12)}
+.home-theme .daily-card{background:linear-gradient(135deg,var(--p-s1),var(--p-s2));color:#fff}
+.home-theme .daily-card small,.home-theme .card-arrow{color:rgba(255,255,255,.78)}
+.home-theme .daily-icon{background:linear-gradient(135deg,var(--p-a1),var(--p-a2));color:#fff}
+.home-theme .game-card{background:linear-gradient(180deg,#ffffff,#f7f9ff);border-color:rgba(255,255,255,.85)}
+.home-theme .game-card .game-icon{background:linear-gradient(135deg,var(--p-a1),var(--p-a2));color:#fff}
+.home-theme .game-card .mini-arrow{background:linear-gradient(135deg,var(--p-a1),var(--p-a2));color:#fff}
+.home-theme .game-mixed{background:linear-gradient(135deg,var(--p-s1),var(--p-s2),var(--p-a1))}
+.home-theme .stat:after{background:linear-gradient(135deg,var(--p-a1),transparent)}
+.screen-theme .primary{background:linear-gradient(135deg,var(--p-a1),var(--p-a2));box-shadow:0 8px 20px rgba(84,103,214,.24)}
+.game-theme .game-shell{background:linear-gradient(180deg,var(--p-s1),#0d1220);color:#eef4ff;border-color:rgba(112,134,182,.22)}
+.game-theme .game-head{border-bottom-color:rgba(154,173,215,.16)}
+.game-theme .badge{background:linear-gradient(135deg,var(--p-s2),rgba(12,20,38,.8));color:#fff;border:1px solid rgba(255,255,255,.08)}
+.game-theme .timer{background:linear-gradient(135deg,var(--p-a1),var(--p-a2));color:#fff}
+.game-theme .quiz-q,.game-theme .logic-panel,.game-theme .escape-question{border-color:rgba(255,255,255,.14)}
+.game-theme .quiz-q{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03))}
+.game-theme .choice{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid rgba(155,177,224,.18);color:#eef4ff}
+.game-theme .choice.correct{background:linear-gradient(135deg,var(--p-a1),var(--p-a2));border-color:transparent}
+.game-theme .choice.wrong{background:linear-gradient(135deg,#8d2b53,#c24848);border-color:transparent}
+.game-theme .message{background:rgba(255,255,255,.06);color:#d8e2f4;border:1px solid rgba(255,255,255,.06)}
+.game-theme .message.ok{background:linear-gradient(135deg,rgba(34,154,94,.24),rgba(16,111,82,.18));color:#e4fff0}
+.game-theme .message.bad{background:linear-gradient(135deg,rgba(160,50,50,.28),rgba(121,27,62,.20));color:#ffe7e7}
+.game-theme .progress>span{background:linear-gradient(90deg,var(--p-a1),var(--p-a2),var(--p-a3))}
+.game-theme .answer-row input{background:rgba(255,255,255,.08);border-color:rgba(166,182,214,.18);color:#fff}
+.game-theme .secondary{background:rgba(255,255,255,.07);color:#fff;border-color:rgba(255,255,255,.14)}
+.game-theme .secondary.danger{background:rgba(135,34,34,.22)}
+@media (min-width:720px){.palette-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}

@@ -15,10 +15,31 @@ const GAME_NAMES={mixed:'Partita Mista',sudoku:'Sudoku',wordsearch:'Cerca-parole
 const LEVEL_NAMES={easy:'Facile',medium:'Medio',hard:'Difficile',extreme:'Difficilissimo'};
 const ICONS={mixed:'🎲',sudoku:'🔢',wordsearch:'🔤',anagram:'🔡',quiz:'❓',logic:'🧠',escape:'🔐'};
 
-const freshStore=()=>({version:1,createdAt:new Date().toISOString(),history:[],stats:{}});
-function loadStore(){try{return {...freshStore(),...JSON.parse(localStorage.getItem(STORE_KEY)||'{}')}}catch{return freshStore()}}
+const DEFAULT_GAME_PALETTES={mixed:'violet',sudoku:'ocean',wordsearch:'forest',anagram:'sunset',quiz:'steel',logic:'ember',escape:'gold'};
+const DEFAULT_SETTINGS={homePalette:'aurora',gamePalettes:{...DEFAULT_GAME_PALETTES}};
+const PALETTES={
+  aurora:{name:'Aurora',s1:'#0f1631',s2:'#1e2e68',a1:'#6a5cff',a2:'#29c7ff',a3:'#7dffb3'},
+  ocean:{name:'Ocean',s1:'#0a1c2c',s2:'#12395a',a1:'#168dff',a2:'#38d7ff',a3:'#8bf3ff'},
+  forest:{name:'Forest',s1:'#0f251e',s2:'#1e4a37',a1:'#17b26a',a2:'#70d66b',a3:'#c8f169'},
+  sunset:{name:'Sunset',s1:'#321322',s2:'#652341',a1:'#ff7a18',a2:'#ff4d6d',a3:'#ffd166'},
+  ember:{name:'Ember',s1:'#2a1620',s2:'#53253e',a1:'#ff5e5b',a2:'#ff9a3c',a3:'#ffe066'},
+  violet:{name:'Violet',s1:'#1d1739',s2:'#39256c',a1:'#8b5cf6',a2:'#c084fc',a3:'#f0abfc'},
+  steel:{name:'Steel',s1:'#121826',s2:'#22304c',a1:'#5ea1ff',a2:'#60c2ff',a3:'#cad8ff'},
+  gold:{name:'Gold',s1:'#2a1c0d',s2:'#5a3c12',a1:'#ffb703',a2:'#ffd166',a3:'#ffe7a3'}
+};
+const freshStore=()=>({version:1,createdAt:new Date().toISOString(),history:[],stats:{},settings:{...DEFAULT_SETTINGS,gamePalettes:{...DEFAULT_GAME_PALETTES}}});
+function normalizeStoreShape(raw){const base=freshStore();const out={...base,...raw};out.settings={...base.settings,...(raw.settings||{})};out.settings.gamePalettes={...base.settings.gamePalettes,...((raw.settings||{}).gamePalettes||{})};return out}
+function loadStore(){try{return normalizeStoreShape(JSON.parse(localStorage.getItem(STORE_KEY)||'{}'))}catch{return freshStore()}}
 let store=loadStore();
 function persist(){localStorage.setItem(STORE_KEY,JSON.stringify(store))}
+function paletteVars(key){const p=PALETTES[key]||PALETTES.aurora;return `--p-s1:${p.s1};--p-s2:${p.s2};--p-a1:${p.a1};--p-a2:${p.a2};--p-a3:${p.a3};`}
+function getHomePalette(){return store.settings?.homePalette||DEFAULT_SETTINGS.homePalette}
+function getGamePalette(game){return store.settings?.gamePalettes?.[game]||DEFAULT_GAME_PALETTES[game]||'aurora'}
+function setHomePalette(key){store.settings.homePalette=key;persist()}
+function setGamePalette(game,key){store.settings.gamePalettes[game]=key;persist()}
+function paletteOptions(selected){return Object.entries(PALETTES).map(([k,v])=>`<option value="${k}" ${selected===k?'selected':''}>${v.name}</option>`).join('')}
+function paletteSwatches(selected){return Object.entries(PALETTES).map(([k,v])=>`<button class="palette-chip ${selected===k?'selected':''}" onclick="setHomePalette('${k}');renderSettings()"><span class="swatch" style="--s1:${v.s1};--s2:${v.a1};--s3:${v.a2}"></span>${v.name}</button>`).join('')}
+
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function norm(s){return String(s).trim().toLocaleUpperCase('it').normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function shuffle(a,r=Math.random){const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x}
@@ -32,7 +53,8 @@ function endRecord(game,level,score,success,extra={}){if(activeSaved)return;acti
 backBtn.onclick=()=>{stopTimer();renderHome()}; homeBtn.onclick=()=>{stopTimer();renderHome()};
 dialog.addEventListener('close',()=>{const level=dialog.returnValue;if(level&&level!=='cancel'&&pendingGame)startGame(pendingGame,level)});
 
-function renderHome(){activeSaved=false;setHeader('Sala Giochi','Un solo giocatore · archivio locale · v1.2.0');const total=store.history.length,wins=store.history.filter(x=>x.success).length,best=store.history.reduce((m,x)=>Math.max(m,x.score||0),0);app.innerHTML=`
+function renderHome(){activeSaved=false;setHeader('Sala Giochi','Un solo giocatore · archivio locale · v1.3.0');const total=store.history.length,wins=store.history.filter(x=>x.success).length,best=store.history.reduce((m,x)=>Math.max(m,x.score||0),0);app.innerHTML=`
+<div class="screen-theme home-theme" style="${paletteVars(getHomePalette())}">
 <section class="hero"><div class="hero-kicker">🎮 SALA GIOCHI</div><h2>Cosa vuoi giocare?</h2><p>Scegli una sfida, imposta il livello e gioca. Tutto resta memorizzato soltanto su questo dispositivo.</p><div class="hero-note"><span>● 4 livelli</span><span>◉ Offline</span><span>▣ Archivio locale</span></div></section>
 <button class="daily-card" onclick="renderDaily()"><span class="daily-icon">⭐</span><span><strong>Sfida del giorno</strong><small>Una nuova prova da affrontare ogni giorno</small></span><span class="card-arrow">›</span></button>
 <div class="section-title"><h3>Scegli un gioco</h3><small>Facile · Medio · Difficile · Difficilissimo</small></div>
@@ -45,12 +67,13 @@ ${gameCard('quiz','Quiz','Cultura generale e curiosità')}
 ${gameCard('logic','Logica','Sequenze, deduzioni e codici')}
 ${gameCard('escape','Escape Room','Enigmi concatenati in una storia')}
 </div>
-<div class="section-title"><h3>Le tue statistiche</h3><button class="secondary" onclick="renderArchive()">Apri archivio</button></div>
+<div class="section-title"><h3>Le tue statistiche</h3><div class="inline-actions"><button class="secondary" onclick="renderArchive()">Archivio</button><button class="secondary" onclick="renderSettings()">Palette</button></div></div>
 <div class="stat-grid"><div class="stat"><b>${total}</b><span>Partite</span></div><div class="stat"><b>${wins}</b><span>Completate</span></div><div class="stat"><b>${total?Math.round(wins/total*100):0}%</b><span>Successo</span></div><div class="stat"><b>${best}</b><span>Record punti</span></div></div>
-<p class="footer-note">🔒 Nessun dato viene inviato a un server. Il browser conserva lo storico in memoria locale; dall'Archivio puoi esportare un backup JSON.</p>`}
+<p class="footer-note">🔒 Nessun dato viene inviato a un server. Il browser conserva lo storico in memoria locale; dall'Archivio puoi esportare un backup JSON.</p>
+</div>`} 
 function gameCard(id,name,desc){return `<button class="game-card game-${id}" onclick="chooseDifficulty('${id}')"><span class="game-icon">${ICONS[id]}</span><strong>${name}</strong><small>${desc}</small><span class="mini-arrow">›</span></button>`}
 function chooseDifficulty(game){pendingGame=game;difficultyTitle.textContent=`${ICONS[game]} ${GAME_NAMES[game]} · livello`;dialog.showModal()}
-function gameShell(game,level,body){return `<section class="game-shell game-${game}"><div class="game-head"><span class="badge">${ICONS[game]} ${GAME_NAMES[game]} · ${LEVEL_NAMES[level]}</span><span id="timer" class="timer">0:00</span></div>${body}</section>`}
+function gameShell(game,level,body){return `<div class="screen-theme game-theme" style="${paletteVars(getGamePalette(game))}"><section class="game-shell game-${game}"><div class="game-head"><span class="badge">${ICONS[game]} ${GAME_NAMES[game]} · ${LEVEL_NAMES[level]}</span><span id="timer" class="timer">0:00</span></div>${body}</section></div>`}
 function startGame(game,level){activeSaved=false;setHeader(GAME_NAMES[game],LEVEL_NAMES[level]);({sudoku:startSudoku,wordsearch:startWordSearch,anagram:startAnagram,quiz:startQuiz,logic:startLogic,escape:startEscape,mixed:startMixed}[game])(level)}
 
 // ---------- Sudoku ----------
@@ -125,16 +148,35 @@ function startMixed(level){const aq=shuffle(ANAGRAMS[level]).slice(0,2),qq=shuff
 // ---------- Sfida del giorno ----------
 function dateSeed(){const d=new Date(),s=Number(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`);return s}
 function seeded(seed){let x=seed%2147483647;if(x<=0)x+=2147483646;return()=>((x=x*16807%2147483647)-1)/2147483646}
-function renderDaily(){const r=seeded(dateSeed()),games=['anagram','quiz','logic','mixed','wordsearch','escape'],game=games[Math.floor(r()*games.length)],levels=['easy','medium','hard','extreme'],level=levels[Math.floor(r()*levels.length)];setHeader('Sfida del giorno',`${LEVEL_NAMES[level]} · cambia ogni giorno`);app.innerHTML=`<section class="hero"><h2>⭐ ${GAME_NAMES[game]}</h2><p>La sfida di oggi è <b>${LEVEL_NAMES[level]}</b>. Sullo stesso dispositivo resta uguale per tutta la giornata.</p><div class="actions"><button class="primary" id="dailyStart">Inizia la sfida</button><button class="secondary" onclick="renderHome()">Torna alla Home</button></div></section>`;document.getElementById('dailyStart').onclick=()=>startGame(game,level)}
+function renderDaily(){const r=seeded(dateSeed()),games=['anagram','quiz','logic','mixed','wordsearch','escape'],game=games[Math.floor(r()*games.length)],levels=['easy','medium','hard','extreme'],level=levels[Math.floor(r()*levels.length)];setHeader('Sfida del giorno',`${LEVEL_NAMES[level]} · cambia ogni giorno`);app.innerHTML=`<div class="screen-theme home-theme" style="${paletteVars(getHomePalette())}"><section class="hero"><h2>⭐ ${GAME_NAMES[game]}</h2><p>La sfida di oggi è <b>${LEVEL_NAMES[level]}</b>. Sullo stesso dispositivo resta uguale per tutta la giornata.</p><div class="actions"><button class="primary" id="dailyStart">Inizia la sfida</button><button class="secondary" onclick="renderHome()">Torna alla Home</button></div></section></div>`;document.getElementById('dailyStart').onclick=()=>startGame(game,level)}
 
 // ---------- Archivio locale ----------
 function renderArchive(){stopTimer();setHeader('Archivio locale','Storico e backup sul dispositivo');const rows=store.history.slice(0,100);app.innerHTML=`
+<div class="screen-theme home-theme" style="${paletteVars(getHomePalette())}">
 <div class="stat-grid"><div class="stat"><b>${store.history.length}</b><span>Partite salvate</span></div><div class="stat"><b>${store.history.filter(x=>x.success).length}</b><span>Completate</span></div><div class="stat"><b>${Object.keys(store.stats).length}</b><span>Gioco/livello usati</span></div><div class="stat"><b>${store.history.reduce((m,x)=>Math.max(m,x.score||0),0)}</b><span>Record punti</span></div></div>
 <div class="section-title"><h3>Backup</h3></div><div class="actions"><button id="exportBtn" class="primary">Esporta JSON</button><label class="secondary" style="text-align:center">Importa JSON<input id="importFile" type="file" accept="application/json" hidden></label><button id="clearBtn" class="secondary danger">Cancella archivio</button></div>
 <div class="section-title"><h3>Ultime partite</h3><small>massimo 100 mostrate</small></div>
 ${rows.length?`<div style="overflow:auto"><table class="table"><thead><tr><th>Data</th><th>Gioco</th><th>Livello</th><th>Esito</th><th>Punti</th><th>Tempo</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${new Date(x.date).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}</td><td>${GAME_NAMES[x.game]||x.game}</td><td>${LEVEL_NAMES[x.level]||x.level}</td><td>${x.success?'✅':'—'}</td><td>${x.score}</td><td>${fmtTime(x.seconds||0)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Non ci sono ancora partite archiviate.</div>'}
-<p class="footer-note">L'esportazione crea una copia del solo archivio giochi. L'importazione sostituisce l'archivio presente su questo dispositivo.</p>`;
+<p class="footer-note">L'esportazione crea una copia del solo archivio giochi. L'importazione sostituisce l'archivio presente su questo dispositivo.</p></div>`;
 document.getElementById('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(store,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`sala-giochi-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};document.getElementById('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const obj=JSON.parse(await f.text());if(!obj||!Array.isArray(obj.history)||typeof obj.stats!=='object')throw new Error();store=obj;persist();toast('Backup importato');renderArchive()}catch{toast('File di backup non valido')}};document.getElementById('clearBtn').onclick=()=>{if(confirm('Cancellare definitivamente tutto lo storico locale?')){store=freshStore();persist();renderArchive()}}}
+
+
+function renderSettings(){stopTimer();setHeader('Palette e aspetto','Home page e singoli giochi');app.innerHTML=`
+<div class="screen-theme home-theme" style="${paletteVars(getHomePalette())}">
+<section class="game-shell" style="background:var(--surface);color:var(--text)">
+  <div class="section-title" style="margin-top:0"><h3>Palette Home</h3><small>Scelta globale per la pagina iniziale</small></div>
+  <div class="palette-grid">${paletteSwatches(getHomePalette())}</div>
+  <div class="section-title"><h3>Palette per ogni gioco</h3><small>Salvate in locale</small></div>
+  <div class="settings-list">
+    ${['mixed','sudoku','wordsearch','anagram','quiz','logic','escape'].map(game=>`<div class="setting-row"><div><strong>${ICONS[game]} ${GAME_NAMES[game]}</strong><small>Palette attuale: ${PALETTES[getGamePalette(game)].name}</small></div><select data-game="${game}" class="palette-select">${paletteOptions(getGamePalette(game))}</select></div>`).join('')}
+  </div>
+  <div class="actions" style="margin-top:18px"><button class="secondary" id="applyHomeToGames">Usa palette Home per tutti i giochi</button><button class="primary" onclick="renderHome()">Torna alla Home</button></div>
+  <p class="footer-note">Le palette modificano l’aspetto grafico; le scelte vengono salvate solo su questo dispositivo insieme all’archivio locale.</p>
+</section>
+</div>`;
+ document.querySelectorAll('.palette-select').forEach(sel=>sel.onchange=e=>{setGamePalette(e.target.dataset.game,e.target.value);renderSettings()});
+ document.getElementById('applyHomeToGames').onclick=()=>{const key=getHomePalette();Object.keys(DEFAULT_GAME_PALETTES).forEach(g=>setGamePalette(g,key));renderSettings();toast('Palette applicata a tutti i giochi')}
+}
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 renderHome();
