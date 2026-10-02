@@ -34,6 +34,31 @@
     </form>
   </dialog>
 
+
+  <dialog id="helpDialog" class="dialog utility-dialog">
+    <div class="dialog-card">
+      <div class="dialog-title-row"><div><h2 id="helpTitle">Come si gioca</h2><p id="helpLevel"></p></div><button class="dialog-x" type="button" onclick="document.getElementById('helpDialog').close()">×</button></div>
+      <div id="helpContent" class="help-content"></div>
+      <button class="primary wide" type="button" onclick="document.getElementById('helpDialog').close()">Ho capito</button>
+    </div>
+  </dialog>
+
+  <dialog id="notesDialog" class="dialog notes-dialog">
+    <div class="dialog-card notes-card">
+      <div class="dialog-title-row"><div><h2>📝 Taccuino</h2><p id="notesContext">Appunti della partita</p></div><button class="dialog-x" type="button" onclick="closeNotes()">×</button></div>
+      <div class="notes-tools">
+        <button id="copyCurrentBtn" class="secondary" type="button">📌 Copia elemento attuale</button>
+        <button id="clearNotesBtn" class="secondary danger" type="button">Cancella foglio</button>
+      </div>
+      <textarea id="notesArea" class="notes-area" spellcheck="false" placeholder="Scrivi qui indizi, calcoli, ipotesi, combinazioni..."></textarea>
+      <div class="mini-calc">
+        <label for="calcInput">Calcolo rapido</label>
+        <div class="calc-row"><input id="calcInput" inputmode="decimal" placeholder="es. (24+41)-9"><button id="calcBtn" class="secondary" type="button">=</button><output id="calcResult">—</output></div>
+      </div>
+      <p class="notes-save">Salvataggio automatico locale per questa sessione.</p>
+    </div>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>

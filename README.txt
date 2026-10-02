@@ -1,4 +1,4 @@
-SALA GIOCHI — v2.0.0
+SALA GIOCHI — v2.1.0
 
 PWA offline-first per un singolo utente.
 Archivio, palette, statistiche e avanzamento sono salvati esclusivamente nel browser del dispositivo tramite localStorage.
@@ -44,4 +44,7 @@ Lo storico conserva fino a 5000 partite, con gioco, livello, ciclo, sessione, es
 
 GITHUB PAGES
 Caricare tutti i file nella radice del repository e pubblicare main / (root) con GitHub Pages.
-Dopo l'aggiornamento può essere necessario chiudere e riaprire la PWA per consentire al service worker di attivare la nuova cache v2.0.0.
+Dopo l'aggiornamento può essere necessario chiudere e riaprire la PWA per consentire al service worker di attivare la nuova cache v2.1.0.
+
+
+Novità v2.1.0: pulsante Come si gioca per ogni gioco; Taccuino locale per singola sessione con copia dell’elemento corrente e calcolatrice rapida.
