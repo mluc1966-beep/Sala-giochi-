@@ -1,37 +1,47 @@
-SALA GIOCHI - V1.1.0
+SALA GIOCHI — v2.0.0
 
-CONTENUTO
-- Partita Mista
-- Sudoku 9x9 a soluzione unica
+PWA offline-first per un singolo utente.
+Archivio, palette, statistiche e avanzamento sono salvati esclusivamente nel browser del dispositivo tramite localStorage.
+
+GIOCHI
+- Sudoku
 - Cerca-parole
 - Anagrammi
 - Quiz
 - Logica
 - Escape Room
+- Partita Mista
 - Sfida del giorno
-- 3 livelli per ogni gioco: Facile, Medio, Difficile
-- Archivio locale con storico, statistiche, export/import JSON
-- PWA offline, nessun account e nessun backend
+
+DIFFICOLTÀ
+Facile · Medio · Difficile · Difficilissimo
+
+SISTEMA SESSIONI
+Sudoku, Cerca-parole, Anagrammi, Quiz, Logica e Partita Mista hanno un percorso persistente di 100 sessioni per ciascun livello.
+Al termine di una sessione viene proposta la successiva dello stesso livello.
+Dopo la sessione 100 puoi:
+1) rigenerare l'intero ciclo e ripartire dalla Sessione 1;
+2) passare al livello di difficoltà successivo.
+Il contenuto della singola sessione è deterministico: se la interrompi e rientri prima di terminarla, la generazione usa lo stesso seme.
+
+ESCAPE ROOM 2.0
+La stanza non è una sequenza di domande. Gli elementi possono essere esplorati in ordine libero.
+Sono presenti:
+- indizi distribuiti nella stanza;
+- codici dedotti collegando più indizi;
+- inventario;
+- oggetti utilizzabili sull'ambiente;
+- combinazione di oggetti;
+- quadro elettrico, armadietto, cassaforte, parete UV e porta finale;
+- animazioni legate alle azioni.
+
+PALETTE
+La Home e ciascuna tipologia di gioco possono utilizzare palette differenti. Le preferenze sono locali.
 
 ARCHIVIO
-I dati sono salvati nel localStorage del browser con chiave:
-sala_giochi_locale_v1
-Lo storico conserva fino a 250 partite.
+Lo storico conserva fino a 5000 partite, con gioco, livello, ciclo, sessione, esito, punteggio e durata.
+È possibile esportare/importare il backup JSON.
 
-INSTALLAZIONE SU GITHUB PAGES
-1. Crea un repository GitHub, ad esempio "sala-giochi".
-2. Carica nella radice i file contenuti in questa cartella.
-3. In Settings > Pages scegli Deploy from a branch.
-4. Seleziona branch main e cartella /root.
-5. Apri l'indirizzo GitHub Pages generato.
-6. Su Android/Chrome usa "Aggiungi a schermata Home" o "Installa app".
-
-IMPORTANTE
-Per service worker e installazione PWA l'app va aperta tramite HTTPS (GitHub Pages va bene) oppure localhost. Aprire index.html direttamente come file locale permette molte funzioni ma non garantisce il service worker.
-
-
-Aggiornamento v1.4.0: aggiunto il livello Difficilissimo e un restyling grafico dei giochi, con Escape Room animata.
-
-Aggiornamento v1.4.0: scelta palette per Home e per ciascun tipo di gioco, salvata in locale.
-
-Aggiornamento v1.4.0: Escape Room realmente interattiva con hotspot cliccabili, inventario, oggetti, cassaforte, porta e animazioni visibili legate alle azioni.
+GITHUB PAGES
+Caricare tutti i file nella radice del repository e pubblicare main / (root) con GitHub Pages.
+Dopo l'aggiornamento può essere necessario chiudere e riaprire la PWA per consentire al service worker di attivare la nuova cache v2.0.0.
