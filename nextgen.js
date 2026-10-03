@@ -1,10 +1,10 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
-   v2.8.2: aggiunti Gioco del 15 e Puzzle ai Giochi classici. */
+   v2.9.0: L'ULTIMO ALIBI espanso a 30 meccanismi investigativi con combinazioni e depistaggi. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.8.2';
+  const NEXTGEN_VERSION = '2.9.0';
 
   GAME_NAMES.fifteen = 'Gioco del 15';
   GAME_NAMES.picturepuzzle = 'Puzzle';
@@ -102,7 +102,7 @@
     tips: [
       'Il movente da solo non basta: più persone possono avere ottime ragioni per desiderare la morte della vittima.',
       'Gli alibi più forti sono spesso quelli da controllare con maggiore attenzione.',
-      'Nei livelli alti l’accusa viene respinta senza dirti quale parte è sbagliata: usa il Taccuino per costruire una teoria completa.'
+      'Il generatore usa 30 meccanismi investigativi. Nei livelli alti può combinarne due e aggiungere depistaggi indipendenti.'
     ]
   };
 
@@ -363,8 +363,8 @@
       <header class="sg2-detail-head"><button class="sg2-back" onclick="renderNextGenFamily()">←</button><span>NUOVA GENERAZIONE</span></header>
       <section class="sg2-alibi-detail">
         <div class="sg2-alibi-copy"><span class="sg2-eyebrow">GIALLO INVESTIGATIVO</span><h2>L'ULTIMO<br>ALIBI</h2><p class="tagline">Tutti hanno un motivo. Uno solo ha costruito l’alibi perfetto.</p><p>Esamina la scena, interroga i sospetti e ricostruisci gli eventi. Quando avrai visto tutto ciò che serve, il caso ti sfiderà apertamente: da quel momento la soluzione è nelle tue mani.</p>
-          <div class="sg2-alibi-features"><span><b>⌕</b> Indizi fair-play</span><span><b>◷</b> Timeline da ricostruire</span><span><b>⚖</b> Accusa completa</span></div>
-          <h3>Scegli la complessità</h3><div class="sg2-levels alibi-levels">${LEVEL_ORDER.map(l=>`<button onclick="startGame('alibi','${l}')"><b>${LEVEL_NAMES[l]}</b><small>${({easy:'5 sospetti · indizi espliciti',medium:'6 sospetti · falsi collegamenti',hard:'7 sospetti · alibi concatenati',extreme:'8 sospetti · nessun indizio evidenziato'})[l]}</small></button>`).join('')}</div>
+          <div class="sg2-alibi-features"><span><b>30</b> Meccanismi investigativi</span><span><b>⌕</b> Indizi fair-play</span><span><b>⚖</b> Accusa completa</span></div>
+          <h3>Scegli la complessità</h3><div class="sg2-levels alibi-levels">${LEVEL_ORDER.map(l=>`<button onclick="startGame('alibi','${l}')"><b>${LEVEL_NAMES[l]}</b><small>${({easy:'5 sospetti · 1 meccanismo',medium:'6 sospetti · possibili depistaggi',hard:'7 sospetti · 2 meccanismi',extreme:'8 sospetti · 2 meccanismi + depistaggi'})[l]}</small></button>`).join('')}</div>
         </div>
         <div class="sg2-alibi-preview" aria-label="Anteprima di L'Ultimo Alibi"><div class="la-preview-desk"><span class="paper p1"></span><span class="paper p2"></span><span class="glass"></span><span class="clock">22:17</span><span class="key">◆</span></div><div class="la-preview-lamp"></div><div class="la-preview-shadow"></div><div class="la-preview-title"><small>CASO RISERVATO</small><b>CHI<br>MENTE?</b></div></div>
       </section>
@@ -1388,13 +1388,13 @@
 
   // ---------- L'ULTIMO ALIBI ----------
   const LA_CONFIG={
-    easy:{suspects:5,evidence:5,events:5,hint:true,attemptInfo:'detail'},
-    medium:{suspects:6,evidence:6,events:5,hint:true,attemptInfo:'count'},
-    hard:{suspects:7,evidence:7,events:5,hint:false,attemptInfo:'count'},
-    extreme:{suspects:8,evidence:8,events:5,hint:false,attemptInfo:'none'}
+    easy:{suspects:5,evidence:6,events:5,hint:true,attemptInfo:'detail',secondary:0,complications:0},
+    medium:{suspects:6,evidence:7,events:5,hint:true,attemptInfo:'count',secondary:.45,complications:1},
+    hard:{suspects:7,evidence:8,events:6,hint:false,attemptInfo:'count',secondary:1,complications:1},
+    extreme:{suspects:8,evidence:9,events:6,hint:false,attemptInfo:'none',secondary:1,complications:2}
   };
-  const LA_NAMES=['Elena Ferri','Andrea Riva','Marta Valli','Riccardo Neri','Giulia Serra','Paolo Conti','Claudia Orsi','Lorenzo Greco','Sara Berti','Davide Sala','Irene Costa','Giorgio Lanza'];
-  const LA_ROLES=['nipote della vittima','socio d’affari','segretaria personale','medico di famiglia','fratello della vittima','avvocata di casa','collezionista rivale','governante','giornalista','amico d’infanzia','amministratrice','maggiordomo'];
+  const LA_NAMES=['Elena Ferri','Andrea Riva','Marta Valli','Riccardo Neri','Giulia Serra','Paolo Conti','Claudia Orsi','Lorenzo Greco','Sara Berti','Davide Sala','Irene Costa','Giorgio Lanza','Nadia Moretti','Tommaso Righi','Beatrice Fontana','Marco De Santis'];
+  const LA_ROLES=['nipote della vittima','socio d’affari','segretaria personale','medico di famiglia','fratello della vittima','avvocata di casa','collezionista rivale','governante','giornalista','amico d’infanzia','amministratrice','maggiordomo','restauratrice','notaio','fotografa di famiglia','direttore della fondazione'];
   const LA_MOTIVES=[
     {id:'inheritance',label:'Eredità',text:'una modifica imminente del testamento avrebbe escluso questa persona'},
     {id:'blackmail',label:'Ricatto',text:'la vittima custodiva documenti capaci di distruggerne la reputazione'},
@@ -1403,165 +1403,133 @@
     {id:'revenge',label:'Vendetta',text:'un vecchio scandalo era stato provocato dalla vittima'},
     {id:'career',label:'Carriera',text:'la vittima stava per revocare un incarico decisivo'},
     {id:'secret',label:'Segreto',text:'una lettera privata rischiava di diventare pubblica'},
-    {id:'property',label:'Proprietà',text:'una vendita imminente avrebbe fatto perdere una proprietà contesa'}
+    {id:'property',label:'Proprietà',text:'una vendita imminente avrebbe fatto perdere una proprietà contesa'},
+    {id:'authorship',label:'Paternità di un’opera',text:'la vittima stava per rivelare chi aveva realmente creato un’opera contesa'},
+    {id:'custody',label:'Custodia di documenti',text:'alcuni documenti affidati alla vittima avrebbero provocato conseguenze immediate'}
   ];
   const LA_SETTINGS=[
     {name:'Villa Bellombra',place:'una villa isolata durante un temporale',rooms:['Salone','Biblioteca','Serra','Studio','Sala da musica','Veranda','Cucina','Corridoio']},
     {name:'Hotel Miralago',place:'un albergo sul lago chiuso per la notte',rooms:['Salone','Biblioteca','Veranda','Bar','Sala da tè','Cucina','Corridoio','Giardino d’inverno']},
     {name:'Tenuta Roccanera',place:'una tenuta di campagna durante una cena di famiglia',rooms:['Salone','Studio','Serra','Biblioteca','Sala da pranzo','Cucina','Veranda','Galleria']},
-    {name:'Palazzo Orsini',place:'un palazzo storico durante un ricevimento privato',rooms:['Salone','Biblioteca','Galleria','Studio','Sala della musica','Cucina','Terrazza','Corridoio']}
+    {name:'Palazzo Orsini',place:'un palazzo storico durante un ricevimento privato',rooms:['Salone','Biblioteca','Galleria','Studio','Sala della musica','Cucina','Terrazza','Corridoio']},
+    {name:'Treno Aurora',place:'un treno notturno fermo per una frana',rooms:['Vagone salone','Cabina 4','Vagone ristorante','Cabina 7','Corridoio','Vagone bar','Compartimento bagagli','Piattaforma']},
+    {name:'Teatro Fenice Nera',place:'un teatro vuoto dopo la prova generale',rooms:['Palcoscenico','Camerino','Foyer','Sala costumi','Regia','Corridoio','Magazzino','Palco reale']}
   ];
   const LA_ARCHETYPES=[
-    {id:'recording',method:'Colpo alla nuca',trick:'Voce registrata',methodDesc:'un fermacarte di bronzo usato come arma',trickDesc:'una registrazione ha fatto credere che la vittima fosse viva più tardi',decisive:'whistle'},
-    {id:'delay',method:'Veleno ad azione ritardata',trick:'Morte ritardata',methodDesc:'una sostanza ingerita molto prima del collasso',trickDesc:'l’ora del crollo non coincide con l’ora dell’avvelenamento',decisive:'toxin'},
-    {id:'clock',method:'Strangolamento',trick:'Orologio falsificato',methodDesc:'una cordicella sottile poi rimossa dalla scena',trickDesc:'l’orologio fermo è stato regolato per spostare artificialmente l’ora del delitto',decisive:'wax'},
-    {id:'latch',method:'Colpo con oggetto pesante',trick:'Porta a scatto',methodDesc:'un oggetto della stanza, ripulito e rimesso al suo posto',trickDesc:'la porta si chiude automaticamente: non era affatto un delitto in stanza chiusa',decisive:'latch'},
-    {id:'glass',method:'Veleno nel bicchiere',trick:'Scambio dei bicchieri',methodDesc:'il veleno era destinato a un bicchiere preciso, poi scambiato',trickDesc:'il bicchiere della vittima è stato sostituito dopo il brindisi',decisive:'monogram'},
-    {id:'music',method:'Colpo alla tempia',trick:'Musica automatica',methodDesc:'un piccolo martello decorativo della sala della musica',trickDesc:'un carillon programmato ha fatto credere che qualcuno stesse ancora suonando',decisive:'spring'}
+    {id:'recording',cat:'sound',method:'Colpo alla nuca',trick:'Voce registrata',methodDesc:'un fermacarte di bronzo usato come arma',trickDesc:'una registrazione ha fatto credere che la vittima fosse viva più tardi',decisive:'recording_echo',clueTitle:'Eco nella registrazione',clueIcon:'≋',clueText:'Nella voce attribuita alla vittima compare due volte lo stesso rumore di fondo, con identica intensità e durata.',methodClue:'Fermacarte di bronzo',methodIcon:'◆',methodText:'Sul bordo inferiore resta una microtraccia compatibile con la ferita.',offset:-18,timelineHint:'Un suono udito più tardi non dimostra che la vittima fosse ancora viva.',secondary:true},
+    {id:'delay',cat:'time',method:'Veleno ad azione ritardata',trick:'Morte ritardata',methodDesc:'una sostanza ingerita molto prima del collasso',trickDesc:'l’ora del crollo non coincide con l’ora dell’avvelenamento',decisive:'toxin_delay',clueTitle:'Referto tossicologico',clueIcon:'✚',clueText:'La sostanza impiega 25–35 minuti prima di produrre i sintomi visibili.',methodClue:'Residuo nel bicchiere',methodIcon:'◌',methodText:'Sul fondo resta una traccia della sostanza, ma la bottiglia comune è pulita.',offset:-30,timelineHint:'Il momento del collasso non coincide con quello in cui il delitto è stato preparato.',secondary:true},
+    {id:'clock',cat:'time',method:'Strangolamento',trick:'Orologio falsificato',methodDesc:'una cordicella sottile poi rimossa dalla scena',trickDesc:'le lancette sono state spostate per creare una falsa ora del delitto',decisive:'clock_dust',clueTitle:'Polvere sulle lancette',clueIcon:'◷',clueText:'Una strisciata recente attraversa la polvere del quadrante: qualcuno ha mosso le lancette dopo l’arresto.',methodClue:'Cordicella di seta',methodIcon:'⌁',methodText:'Un filo spezzato sotto il tappeto presenta fibre compatibili con il segno sul collo.',offset:-12,timelineHint:'L’ora mostrata dalla scena è stata costruita e non coincide con quella reale.',secondary:true},
+    {id:'latch',cat:'access',method:'Colpo con oggetto pesante',trick:'Porta a scatto',methodDesc:'un oggetto della stanza ripulito e rimesso al suo posto',trickDesc:'la porta si chiude automaticamente e crea una falsa stanza chiusa',decisive:'latch_test',clueTitle:'Serratura a scatto',clueIcon:'▯',clueText:'La porta si blocca da sola quando viene tirata: la chiave all’interno non prova che nessuno sia uscito.',methodClue:'Statua di marmo',methodIcon:'♜',methodText:'La base è stata pulita di recente; in una scanalatura resta una fibra.',offset:-8,timelineHint:'La porta chiusa non dimostra affatto che il colpevole fosse ancora nella stanza.',secondary:true},
+    {id:'glass',cat:'object',method:'Veleno nel bicchiere',trick:'Scambio dei bicchieri',methodDesc:'la sostanza era in un bicchiere diverso da quello originariamente usato dalla vittima',trickDesc:'i bicchieri sono stati scambiati dopo il brindisi',decisive:'glass_monogram',clueTitle:'Bicchiere con monogramma',clueIcon:'◌',clueText:'Il bicchiere personale della vittima è sul carrello; quello accanto al corpo non porta le sue iniziali.',methodClue:'Residuo sul panno',methodIcon:'◇',methodText:'Il panno del carrello contiene la stessa sostanza trovata nel bicchiere accanto al corpo.',offset:-10,timelineHint:'Lo scambio è avvenuto prima che la vittima usasse il bicchiere trovato accanto al corpo.',secondary:true},
+    {id:'music',cat:'sound',method:'Colpo alla tempia',trick:'Musica automatica',methodDesc:'un piccolo martello decorativo ha provocato il colpo mortale',trickDesc:'un meccanismo automatico ha simulato una presenza nella sala della musica',decisive:'music_spring',clueTitle:'Meccanismo a molla',clueIcon:'⚙',clueText:'Sotto il leggio c’è un dispositivo che può avviare da solo il motivo udito dagli ospiti.',methodClue:'Martello decorativo',methodIcon:'◆',methodText:'Una piccola ammaccatura recente e una microtraccia lo collegano alla ferita.',offset:-14,timelineHint:'La musica udita più tardi non richiedeva la presenza di nessuno nella stanza.',secondary:true},
+    {id:'video',cat:'time',method:'Soffocamento',trick:'Video con orario ingannevole',methodDesc:'un cuscino decorativo è stato usato e poi rimesso al suo posto',trickDesc:'un breve video precedente è stato mostrato come se fosse appena registrato',decisive:'video_metadata',clueTitle:'Metadati del video',clueIcon:'▣',clueText:'Il file mostrato agli ospiti contiene un fotogramma creato ventidue minuti prima dell’orario dichiarato.',methodClue:'Cuscino ricollocato',methodIcon:'□',methodText:'Una cucitura contiene una fibra e una lieve deformazione incompatibili con il normale uso.',offset:-22,timelineHint:'L’immagine è autentica, ma non appartiene all’orario in cui è stata mostrata.',secondary:true},
+    {id:'medicine',cat:'poison',method:'Sovradosaggio farmacologico',trick:'Farmaco sostituito',methodDesc:'una compressa è stata sostituita con una dose molto più potente',trickDesc:'la confezione corretta conteneva una compressa che non doveva trovarsi lì',decisive:'pill_mark',clueTitle:'Incisione sulla compressa',clueIcon:'✚',clueText:'Una compressa nel blister ha forma e incisione diverse dalle altre, pur essendo stata rimessa nella stessa sede.',methodClue:'Blister manipolato',methodIcon:'▤',methodText:'La pellicola di una sola cavità è stata richiusa con un adesivo trasparente.',offset:-25,timelineHint:'Il gesto apparentemente normale di assumere una medicina è stato trasformato nel momento decisivo.',secondary:false},
+    {id:'container',cat:'object',method:'Avvelenamento',trick:'Scambio di contenitori',methodDesc:'la sostanza era in un piccolo contenitore personale',trickDesc:'due contenitori quasi identici sono stati invertiti prima dell’uso',decisive:'container_scratch',clueTitle:'Graffio sul tappo',clueIcon:'◇',clueText:'Il tappo trovato sulla scrivania combacia con il contenitore sul carrello, non con quello accanto al corpo.',methodClue:'Residuo concentrato',methodIcon:'✚',methodText:'La sostanza è presente solo nel contenitore che non apparteneva alla vittima.',offset:-12,timelineHint:'L’oggetto apparentemente personale della vittima non era quello che aveva usato all’inizio della serata.',secondary:true},
+    {id:'hiddenroute',cat:'access',method:'Accoltellamento',trick:'Percorso alternativo',methodDesc:'un tagliacarte della stanza è stato usato come arma',trickDesc:'un passaggio di servizio consente di entrare senza attraversare il corridoio sorvegliato',decisive:'service_dust',clueTitle:'Polvere interrotta',clueIcon:'⌁',clueText:'Dietro una libreria la polvere del battiscopa è interrotta da un arco recente, come se il mobile fosse stato mosso.',methodClue:'Tagliacarte',methodIcon:'◆',methodText:'La lama è stata pulita ma nel punto di innesto resta una microtraccia.',offset:-6,timelineHint:'L’assenza dal corridoio principale non equivale all’impossibilità di raggiungere la stanza.',secondary:true},
+    {id:'movedobject',cat:'scene',method:'Colpo con oggetto pesante',trick:'Oggetto spostato dopo il delitto',methodDesc:'un fermalibri è stato usato come arma',trickDesc:'l’arma è stata trasferita in un’altra stanza per far cercare il colpevole altrove',decisive:'dust_outline',clueTitle:'Sagoma nella polvere',clueIcon:'◇',clueText:'Sul ripiano resta la sagoma pulita di un oggetto che ora si trova nella stanza vicina.',methodClue:'Fermalibri',methodIcon:'◆',methodText:'Un’ammaccatura recente coincide con il profilo della ferita.',offset:-8,timelineHint:'La posizione in cui un oggetto viene trovato non prova dove fosse al momento del delitto.',secondary:true},
+    {id:'movedbody',cat:'scene',method:'Trauma cranico',trick:'Corpo spostato',methodDesc:'la vittima è stata colpita in un’altra stanza',trickDesc:'il corpo è stato trasferito per alterare luogo e orario apparenti',decisive:'carpet_trace',clueTitle:'Fibra di tappeto',clueIcon:'⌁',clueText:'Sui vestiti della vittima c’è una fibra del tappeto della stanza adiacente, assente nella stanza del ritrovamento.',methodClue:'Macchia ripulita',methodIcon:'◇',methodText:'Una zona del pavimento nella stanza adiacente reagisce al controllo nonostante sia stata lavata.',offset:-16,timelineHint:'Il luogo del ritrovamento non è necessariamente il luogo in cui è avvenuta l’aggressione.',secondary:true},
+    {id:'falsescene',cat:'scene',method:'Ferita da taglio',trick:'Falsa scena del crimine',methodDesc:'una lama personale è stata usata altrove',trickDesc:'oggetti e tracce sono stati disposti per simulare una colluttazione nella stanza sbagliata',decisive:'broken_after',clueTitle:'Vetro rotto senza polvere',clueIcon:'◇',clueText:'I frammenti sono sopra uno strato di polvere intatto: il vetro è stato rotto dopo che la stanza era già rimasta inutilizzata.',methodClue:'Lama ripulita',methodIcon:'◆',methodText:'La lama mostra una pulizia recente incompatibile con il resto dell’oggetto.',offset:-12,timelineHint:'La scena racconta una storia coerente solo se si presume che tutte le tracce siano nate lì.',secondary:true},
+    {id:'disguisedweapon',cat:'object',method:'Ferita penetrante',trick:'Arma camuffata',methodDesc:'un oggetto decorativo nascondeva una punta rigida',trickDesc:'l’arma sembrava un innocuo accessorio della stanza',decisive:'cap_thread',clueTitle:'Filettatura nascosta',clueIcon:'⌕',clueText:'Il pomolo decorativo può essere svitato: all’interno c’è un alloggiamento con residui recenti.',methodClue:'Bastone ornamentale',methodIcon:'◆',methodText:'La lunghezza della punta interna coincide con la profondità della ferita.',offset:-5,timelineHint:'Un oggetto apparentemente innocuo può spiegare perché nessuno abbia visto entrare un’arma.',secondary:false},
+    {id:'improvised',cat:'object',method:'Colpo contundente',trick:'Arma improvvisata e ricollocata',methodDesc:'un oggetto comune è stato usato e poi rimesso nella sua posizione abituale',trickDesc:'l’arma non manca dalla stanza perché è tornata esattamente al suo posto',decisive:'clean_patch',clueTitle:'Zona insolitamente pulita',clueIcon:'◇',clueText:'Un solo lato dell’oggetto è stato lucidato di recente, mentre il resto conserva polvere uniforme.',methodClue:'Candeliere',methodIcon:'♜',methodText:'Il peso e il bordo corrispondono alla lesione descritta nel referto.',offset:-6,timelineHint:'Non serve che un’arma scompaia: può essere rimessa dove tutti si aspettano di trovarla.',secondary:false},
+    {id:'remote',cat:'remote',method:'Scarica elettrica',trick:'Dispositivo azionato a distanza',methodDesc:'un contatto elettrico è stato predisposto sulla lampada',trickDesc:'il circuito poteva essere attivato da un comando remoto fuori dalla stanza',decisive:'remote_freq',clueTitle:'Ricevitore radio',clueIcon:'⚡',clueText:'Nel piede della lampada è nascosto un ricevitore con la stessa frequenza di un piccolo telecomando trovato tra gli oggetti comuni.',methodClue:'Contatto modificato',methodIcon:'⚙',methodText:'Due fili sono stati spellati e riposizionati dietro la base della lampada.',offset:0,timelineHint:'Il colpevole non doveva trovarsi accanto alla vittima quando il dispositivo è entrato in funzione.',secondary:true},
+    {id:'timer',cat:'remote',method:'Trauma provocato da dispositivo',trick:'Meccanismo temporizzato',methodDesc:'un oggetto pesante è stato liberato da un semplice timer meccanico',trickDesc:'l’azione mortale è avvenuta dopo che il colpevole aveva lasciato la stanza',decisive:'timer_teeth',clueTitle:'Timer meccanico',clueIcon:'⚙',clueText:'Tra gli ingranaggi è incastrato un filo spezzato che poteva trattenere il contrappeso fino all’ora impostata.',methodClue:'Contrappeso',methodIcon:'◆',methodText:'Il bordo del peso mostra un urto recente compatibile con la lesione.',offset:0,timelineHint:'L’alibi all’ora della morte è reale, ma non esclude chi aveva preparato il dispositivo prima.',secondary:true},
+    {id:'phone',cat:'location',method:'Colpo alla nuca',trick:'Telefonata da luogo diverso',methodDesc:'un oggetto della stanza è stato usato come arma',trickDesc:'una deviazione di chiamata ha fatto sembrare che la telefonata provenisse da un’altra stanza',decisive:'phone_log',clueTitle:'Registro della centralina',clueIcon:'☎',clueText:'La chiamata è stata inoltrata internamente: il numero visualizzato non identifica il punto da cui si parlava.',methodClue:'Fermaporta',methodIcon:'◆',methodText:'Una piccola scheggiatura recente coincide con la ferita.',offset:-10,timelineHint:'La provenienza apparente di una telefonata non coincide necessariamente con la posizione di chi parla.',secondary:true},
+    {id:'scheduledmsg',cat:'time',method:'Avvelenamento',trick:'Messaggio programmato',methodDesc:'una sostanza è stata introdotta durante la cena',trickDesc:'un messaggio automatico ha fatto credere che la vittima fosse ancora attiva più tardi',decisive:'message_queue',clueTitle:'Coda dei messaggi',clueIcon:'✉',clueText:'Il dispositivo registra che il messaggio era stato programmato prima dell’ora in cui è stato ricevuto.',methodClue:'Cucchiaino contaminato',methodIcon:'◇',methodText:'Sul cucchiaino resta una traccia della sostanza assente nella bevanda comune.',offset:-20,timelineHint:'Un messaggio ricevuto a una certa ora non prova che sia stato scritto in quel momento.',secondary:true},
+    {id:'identityswap',cat:'identity',method:'Colpo contundente',trick:'Scambio di identità',methodDesc:'un oggetto personale è stato usato durante un incontro privato',trickDesc:'due persone si sono scambiate un elemento distintivo e un testimone ha attribuito la presenza alla persona sbagliata',decisive:'wrong_initials',clueTitle:'Iniziali sul fazzoletto',clueIcon:'⌕',clueText:'Il fazzoletto visto dal testimone porta iniziali diverse da quelle della persona che credeva di aver riconosciuto.',methodClue:'Oggetto personale',methodIcon:'◆',methodText:'Sulla superficie resta una traccia recente incompatibile con l’uso normale.',offset:-8,timelineHint:'Il testimone ha visto davvero qualcuno, ma l’identificazione della persona può essere sbagliata.',secondary:true},
+    {id:'disguise',cat:'identity',method:'Strangolamento',trick:'Travestimento parziale',methodDesc:'una sciarpa è stata usata come mezzo di strangolamento',trickDesc:'cappotto e cappello hanno creato una falsa identificazione a distanza',decisive:'coat_size',clueTitle:'Cappotto della misura sbagliata',clueIcon:'▤',clueText:'Il cappotto attribuito a un sospetto è di due taglie più grande e presenta una piega recente sulle maniche.',methodClue:'Sciarpa',methodIcon:'⌁',methodText:'Le fibre corrispondono al segno lasciato sul collo della vittima.',offset:-7,timelineHint:'Un riconoscimento basato su sagoma e abiti può essere sincero ma comunque errato.',secondary:true},
+    {id:'reflection',cat:'perception',method:'Ferita da taglio',trick:'Riflesso scambiato per presenza diretta',methodDesc:'un tagliacarte è stato usato nella stanza adiacente',trickDesc:'un testimone ha visto una figura nello specchio e l’ha collocata nella stanza sbagliata',decisive:'mirror_angle',clueTitle:'Angolo dello specchio',clueIcon:'◇',clueText:'Dalla posizione del testimone lo specchio riflette la porta della stanza accanto, non il centro della stanza osservata.',methodClue:'Tagliacarte',methodIcon:'◆',methodText:'La punta è stata ripulita ma conserva una microtraccia nel manico.',offset:-5,timelineHint:'Vedere una persona non significa necessariamente vederla nel luogo che sembra occupare.',secondary:true},
+    {id:'misread',cat:'perception',method:'Caduta provocata',trick:'Testimone sincero ma interpretazione errata',methodDesc:'un gradino è stato reso instabile prima del passaggio della vittima',trickDesc:'un gesto normale è stato interpretato come segnale che la vittima fosse ancora cosciente',decisive:'curtain_cord',clueTitle:'Cordoncino della tenda',clueIcon:'⌁',clueText:'Il movimento visto dalla veranda coincide con la tenda tirata dal vento, non con una persona dietro il vetro.',methodClue:'Gradino allentato',methodIcon:'⚙',methodText:'Due viti risultano svitate di recente e conservano segni dello stesso utensile.',offset:-10,timelineHint:'Il testimone non mente: ha visto un movimento reale, ma gli ha attribuito la causa sbagliata.',secondary:true},
+    {id:'soundroom',cat:'sound',method:'Colpo contundente',trick:'Suono proveniente da un’altra stanza',methodDesc:'un trofeo è stato usato come arma',trickDesc:'un condotto acustico ha fatto sembrare che la voce provenisse dalla stanza del delitto',decisive:'vent_test',clueTitle:'Condotto di aerazione',clueIcon:'≋',clueText:'Parlando nella stanza adiacente la voce è chiaramente udibile vicino alla griglia della biblioteca.',methodClue:'Trofeo',methodIcon:'◆',methodText:'Una piccola ammaccatura recente coincide con il profilo della ferita.',offset:-12,timelineHint:'Il luogo da cui un suono sembra provenire può essere diverso dalla sua origine reale.',secondary:true},
+    {id:'unwitting',cat:'alibi',method:'Avvelenamento',trick:'Complice inconsapevole',methodDesc:'una sostanza è stata inserita in una tazza preparata in precedenza',trickDesc:'un innocente ha consegnato l’oggetto preparato dal colpevole senza conoscerne il contenuto',decisive:'tray_sequence',clueTitle:'Sequenza del vassoio',clueIcon:'▤',clueText:'Il registro di cucina mostra che il vassoio è rimasto incustodito per quattro minuti prima di essere consegnato da un’altra persona.',methodClue:'Tazza contaminata',methodIcon:'◌',methodText:'La sostanza è presente nella tazza ma non nella teiera comune.',offset:-18,timelineHint:'Chi ha materialmente consegnato l’oggetto non è necessariamente chi lo ha preparato.',secondary:true},
+    {id:'routine',cat:'automation',method:'Colpo contundente',trick:'Routine automatica sfruttata come alibi',methodDesc:'un oggetto pesante è stato usato prima dell’avvio di una routine domestica',trickDesc:'luci e tende programmate hanno fatto sembrare occupata una stanza vuota',decisive:'automation_log',clueTitle:'Registro dell’automazione',clueIcon:'⚙',clueText:'Luci e tende si sono attivate automaticamente all’orario consueto senza alcun comando manuale.',methodClue:'Oggetto della scrivania',methodIcon:'◆',methodText:'Sul bordo c’è una traccia ripulita solo parzialmente.',offset:-15,timelineHint:'Una stanza che si illumina o cambia aspetto non prova che qualcuno sia presente.',secondary:true},
+    {id:'earlier',cat:'time',method:'Soffocamento',trick:'Delitto precedente all’ora presunta',methodDesc:'il delitto è avvenuto prima della finestra temporale considerata da tutti',trickDesc:'un evento successivo è stato interpretato come prova di vita',decisive:'temperature',clueTitle:'Temperatura della bevanda',clueIcon:'♨',clueText:'La bevanda appena “servita” è già a temperatura ambiente: è stata versata molto prima dell’orario dichiarato.',methodClue:'Cuscino',methodIcon:'□',methodText:'Una cucitura presenta fibre recenti compatibili con i vestiti della vittima.',offset:-28,timelineHint:'Tutti stanno cercando il colpevole nella finestra temporale sbagliata.',secondary:true},
+    {id:'later',cat:'time',method:'Dispositivo temporizzato',trick:'Delitto successivo all’ora presunta',methodDesc:'un dispositivo predisposto prima ha agito dopo che tutti credevano il pericolo passato',trickDesc:'un falso segnale ha anticipato l’ora che tutti associano alla morte',decisive:'fresh_stop',clueTitle:'Orologio arrestato troppo presto',clueIcon:'◷',clueText:'L’orologio è fermo, ma un dispositivo nella stanza registra attività elettrica per altri diciassette minuti.',methodClue:'Dispositivo nascosto',methodIcon:'⚙',methodText:'Un meccanismo dietro la tenda conserva un timer ancora impostato.',offset:17,timelineHint:'L’evento che sembrava segnare la morte è avvenuto prima dell’azione realmente letale.',secondary:true},
+    {id:'victimtrigger',cat:'remote',method:'Reazione chimica',trick:'La vittima attiva inconsapevolmente il meccanismo',methodDesc:'due sostanze innocue separatamente diventano pericolose quando vengono mescolate dalla vittima',trickDesc:'il colpevole prepara la situazione ma l’ultima azione viene compiuta dalla vittima stessa',decisive:'two_residues',clueTitle:'Due residui separati',clueIcon:'✚',clueText:'Una sostanza è sul cucchiaino e l’altra nella bevanda: nessuna delle due, da sola, spiega l’esito.',methodClue:'Preparazione del bicchiere',methodIcon:'◌',methodText:'Il bicchiere è stato predisposto molto prima che la vittima aggiungesse l’ultimo ingrediente.',offset:0,timelineHint:'L’ultima azione materiale può essere stata compiuta dalla vittima senza eliminare la responsabilità di chi ha preparato il meccanismo.',secondary:false},
+    {id:'stagedfall',cat:'scene',method:'Colpo alla nuca',trick:'Caduta simulata',methodDesc:'la vittima è stata colpita e poi collocata ai piedi della scala',trickDesc:'la scena è stata costruita per far sembrare accidentale una lesione precedente',decisive:'blood_direction',clueTitle:'Direzione della traccia',clueIcon:'⌁',clueText:'La traccia sulla ringhiera scende nella direzione opposta a quella prevista da una caduta dall’alto.',methodClue:'Fermaporta',methodIcon:'◆',methodText:'Il bordo reca una microtraccia compatibile con la ferita.',offset:-10,timelineHint:'La posizione finale del corpo è compatibile con una caduta, ma la dinamica delle tracce no.',secondary:true},
+  ];
+  const LA_COMPLICATIONS=[
+    {id:'planted',title:'Oggetto piazzato',icon:'◆',text:ctx=>`Un oggetto appartenente a ${ctx.other.name} è in posizione troppo evidente e privo della normale polvere: sembra collocato apposta.`,summary:'un oggetto è stato piazzato per indirizzare i sospetti verso un innocente'},
+    {id:'partial',title:'Alibi solo parziale',icon:'◷',text:ctx=>`L’alibi di ${ctx.c.name} è verificato alle ${ctx.apparent}, ma nessuno lo colloca con certezza nei quindici minuti precedenti.`,summary:'l’alibi copre l’ora apparente, non tutta la finestra utile'},
+    {id:'witness',title:'Riconoscimento incerto',icon:'⌕',text:ctx=>`Un testimone riconosce un cappotto, non un volto: lo stesso capo era stato lasciato nell’ingresso comune.`,summary:'un riconoscimento sincero si basa su un dettaglio non esclusivo'},
+    {id:'blackout',title:'Interruzione di corrente',icon:'⚡',text:ctx=>`Per quattro minuti le luci e parte delle telecamere non hanno funzionato. Il registro tecnico conferma l’intervallo.`,summary:'un breve blackout interrompe alcune osservazioni'},
+    {id:'sharedmotive',title:'Movente condiviso',icon:'✎',text:ctx=>`${ctx.other.name} aveva un motivo quasi altrettanto forte: la vittima aveva preso una decisione che danneggiava entrambi.`,summary:'un secondo sospetto possiede un movente credibile'},
+    {id:'handled',title:'Oggetto toccato da un innocente',icon:'◇',text:ctx=>`${ctx.other.name} ammette di aver spostato l’oggetto nel pomeriggio: le sue impronte quindi non indicano necessariamente il delitto.`,summary:'una traccia autentica appartiene a un innocente per un motivo precedente'},
+    {id:'delivery',title:'Consegna inconsapevole',icon:'▤',text:ctx=>`Un domestico ha portato il vassoio senza prepararlo: la consegna e la preparazione sono state compiute da persone diverse.`,summary:'un innocente compie l’ultima azione visibile senza conoscere il piano'},
+    {id:'thunder',title:'Rumore coperto dal temporale',icon:'≋',text:ctx=>`Un tuono molto forte è registrato alle ${laTime(ctx.apparent,-9)}: avrebbe coperto un rumore proveniente dal corridoio.`,summary:'un rumore ambientale rende incompleta una testimonianza acustica'},
+    {id:'camera',title:'Buco nella registrazione',icon:'▣',text:ctx=>`La telecamera del corridoio salta esattamente sette minuti per un riavvio automatico, poi riprende senza anomalie.`,summary:'una registrazione apparentemente continua contiene un intervallo mancante'},
+    {id:'cleaning',title:'Pulizia fuori orario',icon:'◇',text:ctx=>`Una zona del pavimento è stata lavata dopo l’orario abituale; il registro delle pulizie non prevede interventi in quella stanza.`,summary:'una pulizia anomala ha cancellato parte delle tracce'}
   ];
   function laPick(arr){return arr[Math.floor(activeRng()*arr.length)]}
-  function laTime(base,delta){const [h,m]=base.split(':').map(Number),n=h*60+m+delta;return `${String(Math.floor(n/60)%24).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`}
+  function laTime(base,delta){const [h,m]=base.split(':').map(Number),n=h*60+m+delta;return `${String((Math.floor(n/60)+24)%24).padStart(2,'0')}:${String((n%60+60)%60).padStart(2,'0')}`}
   function laShuffle(arr){return shuffle(arr,activeRng)}
+  function laUniqueOptions(correct, pool, max=5){const seen=new Set([correct.id]),unique=[];for(const x of pool){if(!seen.has(x.id)){seen.add(x.id);unique.push(x)}}const out=[correct,...laShuffle(unique)].slice(0,max);return laShuffle(out)}
   function laGenerate(level){
-    const cfg=LA_CONFIG[level],setting=laPick(LA_SETTINGS),arch=laPick(LA_ARCHETYPES),names=laShuffle(LA_NAMES).slice(0,cfg.suspects),roles=laShuffle(LA_ROLES).slice(0,cfg.suspects),motives=laShuffle(LA_MOTIVES).slice(0,cfg.suspects),culprit=Math.floor(activeRng()*cfg.suspects),victim=laPick(['Edoardo Valli','Alberto Rinaldi','Vittorio Malaspina','Cesare Bellini','Livia Montorsi']);
-    const baseHour=21+Math.floor(activeRng()*2),baseMin=[5,10,15,20,25,30][Math.floor(activeRng()*6)],apparent=`${String(baseHour).padStart(2,'0')}:${String(baseMin).padStart(2,'0')}`,realOffset=arch.id==='recording'?-15:arch.id==='clock'?-12:arch.id==='delay'?-30:arch.id==='music'?-10:0,real=laTime(apparent,realOffset);
-    const crimeRoom=setting.rooms[1],findTime=laTime(apparent,10),culpritMotive=motives[culprit];
+    const cfg=LA_CONFIG[level],setting=laPick(LA_SETTINGS),arch=laPick(LA_ARCHETYPES),names=laShuffle(LA_NAMES).slice(0,cfg.suspects),roles=laShuffle(LA_ROLES).slice(0,cfg.suspects),motives=laShuffle(LA_MOTIVES).slice(0,cfg.suspects),culprit=Math.floor(activeRng()*cfg.suspects),victim=laPick(['Edoardo Valli','Alberto Rinaldi','Vittorio Malaspina','Cesare Bellini','Livia Montorsi','Adele Corsini','Renato Valeri']);
+    const baseHour=21+Math.floor(activeRng()*2),baseMin=[5,10,15,20,25,30][Math.floor(activeRng()*6)],apparent=`${String(baseHour).padStart(2,'0')}:${String(baseMin).padStart(2,'0')}`,realOffset=arch.offset||0,real=laTime(apparent,realOffset),crimeRoom=setting.rooms[1],findDelta=Math.max(12,realOffset+8),findTime=laTime(apparent,findDelta),culpritMotive=motives[culprit];
     const rooms=laShuffle(setting.rooms.filter(r=>r!==crimeRoom));
     const suspects=names.map((name,i)=>{
       const room=rooms[i%rooms.length],witness=names[(i+1)%names.length],isC=i===culprit;
-      let alibi=`Alle ${apparent} ero in ${room}. ${i%2===0?`${witness} può confermare di avermi visto poco dopo.`:`C’è un dettaglio nella stanza che può confermarlo.`}`;
+      let alibi=`Alle ${apparent} ero in ${room}. ${i%2===0?`${witness} può confermare di avermi visto poco dopo.`:`Un dettaglio della stanza conferma che vi sono passato.`}`;
       let obs=`Ho visto ${names[(i+2)%names.length]} dirigersi verso ${setting.rooms[(i+3)%setting.rooms.length]} prima che trovassero il corpo.`;
-      if(isC){
-        alibi=`Alle ${apparent} ero in ${room}; il mio alibi per quell’ora è verificabile.`;
-        obs=arch.id==='delay'?`La vittima sembrava perfettamente normale quando l’ho lasciata prima delle ${apparent}.`:`Non ho più visto ${victim} dopo cena.`;
-      }
+      if(isC){alibi=`Alle ${apparent} ero in ${room}; il mio alibi per quell’ora è verificabile.`;obs=`Non ho più parlato con ${victim} dopo l’incontro precedente. Ho saputo del delitto insieme agli altri.`}
       return {id:`s${i}`,name,role:roles[i],motive:motives[i],room,isC,initials:name.split(' ').map(x=>x[0]).join('').slice(0,2),relation:`${name} è ${roles[i]}. Tra i due c’erano tensioni: ${motives[i].text}.`,alibi,obs};
     });
     const c=suspects[culprit],other=suspects[(culprit+1)%suspects.length];
-    let evidence=[],events=[];
-    if(arch.id==='recording'){
-      evidence=[
-        ['clock','Orologio da tavolo','◷',`Segna ${apparent}. Non presenta segni di manomissione e continua a funzionare.`],
-        ['recorder','Registratore tascabile','▣','Nel mobile accanto alla scrivania c’è un registratore con il nastro ancora inserito.'],
-        ['whistle','Il fischio lontano','≋',`Nella frase attribuita alla vittima alle ${apparent} si sente un fischio ferroviario. L’ultimo treno era passato alle ${laTime(apparent,-20)}.`],
-        ['weapon','Fermacarte di bronzo','◆','Sul bordo inferiore è stata rimossa in fretta una piccola macchia scura.'],
-        ['note','Appunto strappato','✎',`“Parlerò con ${c.name.split(' ')[0]} prima di tutti.”`],
-        ['door','Porta della biblioteca','▯','Nessun segno di effrazione. La porta era socchiusa quando il corpo è stato trovato.'],
-        ['glass','Bicchiere','◌','Contiene solo acqua. Nessuna sostanza insolita.'],
-        ['train','Orario ferroviario','≡',`Il treno serale passa dietro la tenuta una sola volta, alle ${laTime(apparent,-20)}.`]
-      ];
-      events=[
-        [`${laTime(apparent,-25)} · ${victim} entra in ${crimeRoom}`,'La vittima si ritira con alcuni documenti.'],
-        [`${laTime(apparent,-20)} · passa il treno`,'Il fischio è udibile chiaramente dalla biblioteca.'],
-        [`${real} · aggressione`,'Il colpo mortale avviene prima dell’ora che tutti considereranno decisiva.'],
-        [`${apparent} · si sente la voce della vittima`,'Una frase registrata viene riprodotta dalla biblioteca.'],
-        [`${findTime} · viene trovato il corpo`,'La registrazione ha spostato in avanti l’ora apparente del delitto.']
-      ];
-    }else if(arch.id==='delay'){
-      evidence=[
-        ['glass','Bicchiere da liquore','◌','Sul fondo resta una traccia di liquore alle erbe.'],
-        ['toxin','Referto preliminare','✚',`La sostanza trovata agisce in circa 25–35 minuti: il collasso alle ${apparent} implica ingestione molto prima.`],
-        ['tray','Vassoio','▤',`${c.name} aveva aiutato a preparare il vassoio servito alla vittima.`],
-        ['photo','Fotografia della cena','▣',`Alle ${laTime(apparent,-30)} la vittima ha già in mano lo stesso bicchiere.`],
-        ['note','Lettera privata','✎',`La vittima minacciava di rivelare ciò che riguardava ${c.name}.`],
-        ['bottle','Bottiglia','⌁','La bottiglia comune è pulita: la sostanza non era nel contenitore condiviso.'],
-        ['spoon','Cucchiaino','◇','Sul cucchiaino usato per preparare il bicchiere c’è una traccia compatibile.'],
-        ['doctor','Nota medica','✚','La vittima non assumeva farmaci che potessero spiegare il collasso.']
-      ];
-      events=[
-        [`${laTime(apparent,-35)} · si prepara il digestivo`,'Il bicchiere destinato alla vittima viene preparato.'],
-        [`${laTime(apparent,-30)} · la vittima beve`,'L’ingestione avviene durante la conversazione.'],
-        [`${laTime(apparent,-15)} · gli ospiti si separano`,'Il futuro colpevole può ormai costruirsi un alibi.'],
-        [`${apparent} · la vittima crolla`,'Gli effetti della sostanza diventano visibili.'],
-        [`${findTime} · si comprende la gravità`,'Tutti pensano inizialmente a un malore improvviso.']
-      ];
-    }else if(arch.id==='clock'){
-      evidence=[
-        ['clock','Orologio rotto','◷',`Le lancette sono ferme sulle ${apparent}. Il vetro, però, è intatto.`],
-        ['wax','Candela della scrivania','♨',`La candela è stata accesa alle ${laTime(apparent,-25)} e la colatura indica circa tredici minuti di combustione prima che venisse spenta.`],
-        ['cord','Cordicella di seta','⌁','Un piccolo filo spezzato è rimasto sotto il bordo del tappeto.'],
-        ['hands','Polvere sulle lancette','◇','Sul bordo dell’orologio c’è una strisciata recente, come se le lancette fossero state mosse a mano.'],
-        ['note','Agenda della vittima','✎',`Alle ${real} era previsto un incontro privato con ${c.name}.`],
-        ['window','Finestra','▯','Chiusa dall’interno. Nessuna via di fuga esterna.'],
-        ['ash','Cenere nel camino','≈','Un frammento di lettera bruciata contiene le iniziali del movente.'],
-        ['shoe','Segno sul tappeto','⌁',`Un’impronta compatibile con le scarpe di ${c.name} è vicino alla scrivania, non alla porta.`]
-      ];
-      events=[
-        [`${laTime(apparent,-25)} · viene accesa la candela`,'La vittima inizia a lavorare alla scrivania.'],
-        [`${real} · incontro privato`,'Il vero momento del delitto è prima dell’ora indicata dall’orologio.'],
-        [`${laTime(apparent,-8)} · la stanza resta silenziosa`,'Nessuno entra.'],
-        [`${apparent} · l’orologio sembra fissare l’ora del delitto`,'È un indizio costruito, non una registrazione affidabile.'],
-        [`${findTime} · corpo scoperto`,'L’ora falsa indirizza subito i sospetti verso altri alibi.']
-      ];
-    }else if(arch.id==='latch'){
-      evidence=[
-        ['latch','Serratura a scatto','▯','Il chiavistello scatta automaticamente appena la porta viene tirata: non serve una chiave dall’esterno.'],
-        ['key','Chiave sul tappeto','◆','La chiave trovata dentro la stanza non è necessaria per chiudere la porta.'],
-        ['weapon','Statua di marmo','♜','La base è stata pulita di recente; in una scanalatura resta una fibra.'],
-        ['fiber','Fibra scura','⌁',`La fibra corrisponde al tessuto dell’abito indossato da ${c.name}.`],
-        ['note','Documento aperto','✎',`Il fascicolo riguarda direttamente ${c.name} e il motivo del conflitto.`],
-        ['window','Finestra','▯','Bloccata da settimane per un difetto del telaio.'],
-        ['dust','Polvere sul davanzale','◇','Intatta: nessuno è passato dalla finestra.'],
-        ['bell','Campanello','◉','La vittima aveva suonato per chiedere che nessuno la disturbasse pochi minuti prima.']
-      ];
-      events=[
-        [`${laTime(apparent,-12)} · ${c.name} entra in ${crimeRoom}`,'L’incontro avviene senza testimoni.'],
-        [`${real} · aggressione`,'L’arma è un oggetto già presente nella stanza.'],
-        [`${laTime(apparent,-4)} · il colpevole esce`,'La porta viene semplicemente tirata dietro di sé.'],
-        [`${apparent} · la porta risulta chiusa`,'Tutti la interpretano erroneamente come chiusa dall’interno.'],
-        [`${findTime} · la porta viene forzata`,'La chiave a terra rende la scena più misteriosa di quanto sia.']
-      ];
-    }else if(arch.id==='glass'){
-      evidence=[
-        ['monogram','Bicchiere con monogramma','◌',`Il bicchiere personale della vittima, con iniziali incise, è stato trovato sul carrello invece che sulla scrivania.`],
-        ['glass2','Secondo bicchiere','◉','Quello accanto al corpo non porta alcun monogramma.'],
-        ['toxin','Analisi del residuo','✚','La sostanza è presente solo nel bicchiere senza monogramma.'],
-        ['tray','Carrello dei liquori','▤',`${c.name} è stato visto accanto al carrello dopo il brindisi.`],
-        ['cloth','Panno umido','◇','Il panno del carrello contiene tracce dello stesso liquore e una minima quantità della sostanza.'],
-        ['note','Biglietto','✎',`La vittima aveva convocato ${c.name} per discutere una questione delicata.`],
-        ['bottle','Bottiglia comune','⌁','Nessuna traccia di veleno: il contenuto condiviso era sicuro.'],
-        ['print','Impronta parziale','⌕',`Sul bicchiere scambiato compare un’impronta compatibile con ${c.name}.`]
-      ];
-      events=[
-        [`${laTime(apparent,-20)} · brindisi`,'Tutti usano bicchieri diversi.'],
-        [`${laTime(apparent,-14)} · la vittima lascia il bicchiere`,'Il bicchiere personale resta incustodito per pochi minuti.'],
-        [`${laTime(apparent,-10)} · scambio`,'Il bicchiere senza monogramma viene messo al posto di quello della vittima.'],
-        [`${apparent} · la vittima beve`,'La sostanza viene ingerita.'],
-        [`${findTime} · il corpo viene trovato`,'Il bicchiere sbagliato resta accanto alla vittima.']
-      ];
-    }else{
-      evidence=[
-        ['piano','Pianoforte','♫',`Alle ${apparent} tutti hanno sentito lo stesso motivo provenire dalla sala della musica.`],
-        ['spring','Meccanismo automatico','⚙','Sotto il leggio c’è un carillon a molla collegato al pianoforte: può riprodurre da solo un breve motivo.'],
-        ['weapon','Martello decorativo','◆','Un oggetto del metronomo presenta una piccola ammaccatura recente.'],
-        ['note','Spartito annotato','✎',`Sul margine compare l’ora ${apparent}, scritta da una mano diversa da quella della vittima.`],
-        ['fiber','Filo di lana','⌁',`Sul meccanismo c’è un filo dello stesso colore dell’abito di ${c.name}.`],
-        ['chair','Sgabello','□','La polvere sullo sgabello è uniforme: nessuno era seduto al pianoforte quando il motivo è stato udito.'],
-        ['clock','Metronomo','◷','Il metronomo era stato caricato molto prima e non richiede presenza umana.'],
-        ['letter','Lettera','✎',`La vittima stava per affrontare ${c.name} su ${culpritMotive.label.toLowerCase()}.`]
-      ];
-      events=[
-        [`${laTime(apparent,-18)} · viene caricato il meccanismo`,'Qualcuno prepara l’alibi sonoro.'],
-        [`${real} · aggressione`,'Il delitto avviene prima della musica.'],
-        [`${laTime(apparent,-4)} · il colpevole raggiunge altri ospiti`,'L’alibi personale è ormai costruito.'],
-        [`${apparent} · si sente il pianoforte`,'Il carillon automatico simula una presenza nella stanza.'],
-        [`${findTime} · corpo scoperto`,'Solo allora si controlla la sala della musica.']
-      ];
-    }
+    const secondaryCandidates=LA_ARCHETYPES.filter(x=>x.secondary&&x.id!==arch.id&&x.cat!==arch.cat);
+    const useSecondary=cfg.secondary===1 || (cfg.secondary>0&&activeRng()<cfg.secondary);
+    const secondary=useSecondary?laPick(secondaryCandidates):null;
+    const complications=laShuffle(LA_COMPLICATIONS).slice(0,cfg.complications);
+    const ctx={c,other,victim,apparent,real,findTime,crimeRoom,setting};
+    const tracePool=[
+      ['trace_fiber','Fibra sul bordo','⌁',`Una fibra nel punto rilevante corrisponde al tessuto dell’abito indossato da ${c.name}.`],
+      ['trace_print','Impronta incompleta','⌕',`Una porzione d’impronta compatibile con ${c.name} compare in un punto che non aveva motivo di toccare.`],
+      ['trace_note','Annotazione privata','✎',`La vittima aveva scritto: “Parlerò con ${c.name.split(' ')[0]} prima di tutti”.`],
+      ['trace_access','Registro di accesso','≡',`Un passaggio associato a ${c.name} è registrato vicino a ${crimeRoom} durante la finestra utile.`],
+      ['trace_thread','Filo strappato','⌁',`Un filo del colore dell’abito di ${c.name} è rimasto impigliato in un punto collegato al meccanismo.`]
+    ];
+    const culpritTrace=laPick(tracePool);
+    let evidence=[
+      [arch.decisive,arch.clueTitle,arch.clueIcon,arch.clueText],
+      [`method_${arch.id}`,arch.methodClue,arch.methodIcon,arch.methodText],
+      culpritTrace,
+      ['motive_doc','Documento della vittima','✎',`Il documento riguarda direttamente ${c.name}: ${culpritMotive.text}.`]
+    ];
+    if(secondary){evidence.push([`secondary_${secondary.id}`,`Seconda anomalia: ${secondary.trick}`,secondary.clueIcon,`${secondary.clueText} Questo dettaglio non spiega il metodo principale, ma altera la lettura dell’alibi.`])}
+    for(const comp of complications)evidence.push([`comp_${comp.id}`,comp.title,comp.icon,comp.text(ctx)]);
+    const neutral=[
+      ['neutral_window','Finestra','▯','Nessun segno di effrazione evidente; il telaio non mostra danni recenti.'],
+      ['neutral_glass','Bicchiere comune','◌','Non contiene sostanze utili alla ricostruzione.'],
+      ['neutral_book','Libro aperto','▤','La pagina segnata riguarda un argomento estraneo al caso.'],
+      ['neutral_ash','Cenere nel camino','≈','I frammenti bruciati sono troppo incompleti per attribuire un nome.'],
+      ['neutral_clock','Orologio del corridoio','◷',`Segna correttamente le ${laTime(apparent,-6)} quando viene controllato.`],
+      ['neutral_key','Chiave di servizio','◆','Apre solo un armadio della biancheria e non la stanza del delitto.']
+    ];
+    evidence.push(...laShuffle(neutral));
     evidence=evidence.slice(0,cfg.evidence).map((e,i)=>({id:e[0],title:e[1],icon:e[2],text:e[3],essential:true,index:i}));
-    // pad timeline with neutral but ordered observations for higher levels
-    while(events.length<cfg.events){const n=events.length;events.splice(Math.max(1,events.length-1),0,[`${laTime(apparent,-18+n*2)} · passaggio nel corridoio`,`Un domestico annota un movimento che aiuta a fissare la sequenza.`])}
-    events=events.slice(0,cfg.events).map((e,i)=>({id:`e${i}`,label:e[0],text:e[1],order:i}));
+    const prepDelta=Math.min(realOffset-12,-18),midDelta=realOffset-5;
+    let timedEvents=[
+      {d:prepDelta,label:`${laTime(apparent,prepDelta)} · preparazione`,text:'Un gesto apparentemente secondario crea le condizioni perché il piano funzioni.'},
+      {d:midDelta,label:`${laTime(apparent,midDelta)} · ultimo incontro utile`,text:`${victim} viene visto o sentito durante la finestra che precede il momento decisivo.`},
+      {d:realOffset,label:`${real} · momento decisivo`,text:arch.methodDesc+'.'},
+      {d:0,label:`${apparent} · ora che inganna`,text:arch.trickDesc+'.'},
+      {d:findDelta,label:`${findTime} · scoperta del corpo`,text:'La scena viene interpretata inizialmente secondo l’ora apparente.'}
+    ];
+    if(secondary)timedEvents.push({d:-4,label:`${laTime(apparent,-4)} · seconda anomalia`,text:secondary.trickDesc+'.'});
+    while(timedEvents.length<cfg.events){const d=-2-timedEvents.length;timedEvents.push({d,label:`${laTime(apparent,d)} · movimento registrato`,text:'Un passaggio secondario aiuta a fissare la sequenza senza identificare da solo il colpevole.'})}
+    timedEvents.sort((a,b)=>a.d-b.d);
+    let events=timedEvents.slice(0,cfg.events).map((e,i)=>({id:`e${i}`,label:e.label,text:e.text,order:i}));
+    const allMethods=LA_ARCHETYPES.map(x=>({id:x.method,label:x.method}));
+    const allTricks=LA_ARCHETYPES.map(x=>({id:x.trick,label:x.trick}));
     const accusationOptions={
       culprit:laShuffle(suspects.map(x=>({id:x.id,label:x.name}))),
-      motive:laShuffle(motives.slice(0,Math.min(motives.length,5)).map(x=>({id:x.id,label:x.label}))),
-      method:laShuffle([arch.method,'Veleno nel vino','Colpo d’arma da fuoco','Soffocamento','Caduta provocata'].filter((x,i,a)=>a.indexOf(x)===i).slice(0,5).map(x=>({id:x,label:x}))),
-      trick:laShuffle([arch.trick,'Finestra segreta','Testimone complice','Travestimento','Scambio di persona'].filter((x,i,a)=>a.indexOf(x)===i).slice(0,5).map(x=>({id:x,label:x}))),
-      clue:laShuffle(evidence.map(x=>({id:x.id,label:x.title})).slice(0,Math.min(6,evidence.length)))
+      motive:laUniqueOptions({id:culpritMotive.id,label:culpritMotive.label},LA_MOTIVES.map(x=>({id:x.id,label:x.label})),5),
+      method:laUniqueOptions({id:arch.method,label:arch.method},allMethods,5),
+      trick:laUniqueOptions({id:arch.trick,label:arch.trick},allTricks,5),
+      clue:laUniqueOptions({id:arch.decisive,label:arch.clueTitle},evidence.map(x=>({id:x.id,label:x.title})),Math.min(6,evidence.length))
     };
-    if(!accusationOptions.motive.some(x=>x.id===culpritMotive.id)) accusationOptions.motive[0]={id:culpritMotive.id,label:culpritMotive.label};
-    if(!accusationOptions.clue.some(x=>x.id===arch.decisive)){const decisiveMap={whistle:'Il fischio lontano',toxin:'Referto preliminare',wax:'Candela della scrivania',latch:'Serratura a scatto',monogram:'Bicchiere con monogramma',spring:'Meccanismo automatico'};accusationOptions.clue[0]={id:arch.decisive,label:decisiveMap[arch.decisive]}}
-    return {cfg,setting,arch,victim,apparent,real,findTime,suspects,culprit,culpritMotive,crimeRoom,evidence,events,accusationOptions,solution:{culprit:`s${culprit}`,motive:culpritMotive.id,method:arch.method,trick:arch.trick,clue:arch.decisive},title:`Il caso di ${setting.name}`,intro:`${victim} viene trovato senza vita in ${crimeRoom.toLowerCase()} a ${setting.name}, ${setting.place}. Tutti i presenti hanno un motivo. Quasi tutti hanno anche un alibi.`};
+    const secondarySummary=secondary?` Il caso contiene anche un secondo depistaggio: ${secondary.trick.toLowerCase()}.`:'';
+    const complicationSummary=complications.length?` Complicazioni: ${complications.map(x=>x.summary).join('; ')}.`:'';
+    return {cfg,setting,arch,secondary,complications,secondarySummary,complicationSummary,timelineHint:arch.timelineHint,victim,apparent,real,findTime,suspects,culprit,culpritMotive,crimeRoom,evidence,events,accusationOptions,solution:{culprit:`s${culprit}`,motive:culpritMotive.id,method:arch.method,trick:arch.trick,clue:arch.decisive},title:`Il caso di ${setting.name}`,intro:`${victim} viene trovato senza vita in ${crimeRoom.toLowerCase()} a ${setting.name}, ${setting.place}. Tutti i presenti hanno un motivo. Quasi tutti hanno anche un alibi.`};
   }
   function laPortrait(s){return `<span class="la-avatar">${s.initials}</span>`}
   function laSelect(name,options,placeholder){return `<div class="la-acc-group"><label>${name}</label><div class="la-choice-grid" data-accgroup="${name}">${options.map(o=>`<button type="button" data-id="${esc(o.id)}">${esc(o.label)}</button>`).join('')}</div><small>${placeholder}</small></div>`}
@@ -1621,11 +1589,11 @@
     function renderTimeline(){tl.innerHTML=timeline.map((e,i)=>`<article data-event="${e.id}"><div class="la-time-index">${String(i+1).padStart(2,'0')}</div><div><b>${esc(e.label)}</b><small>${esc(e.text)}</small></div><div class="la-order-btns"><button data-up="${i}" ${i===0?'disabled':''}>↑</button><button data-down="${i}" ${i===timeline.length-1?'disabled':''}>↓</button></div></article>`).join('');tl.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>{const i=+b.dataset.up;[timeline[i-1],timeline[i]]=[timeline[i],timeline[i-1]];renderTimeline()});tl.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>{const i=+b.dataset.down;[timeline[i+1],timeline[i]]=[timeline[i],timeline[i+1]];renderTimeline()})}
     renderTimeline();
     document.getElementById('laTimelineReset').onclick=()=>{timeline=laShuffle(g.events.map(e=>({...e})));timelineSolved=false;renderTimeline();tlFb.className='la-feedback';tlFb.innerHTML='<b>Timeline rimescolata.</b><span>Ricostruisci nuovamente la sequenza.</span>'};
-    document.getElementById('laTimelineCheck').onclick=()=>{const misplaced=timeline.filter((e,i)=>e.order!==i).length;if(!misplaced){timelineSolved=true;tlFb.className='la-feedback success';tlFb.innerHTML=`<b>Sequenza coerente.</b><span>${g.arch.id==='delay'?'Il momento del collasso non coincide con quello dell’avvelenamento.':g.arch.id==='recording'||g.arch.id==='music'?'Un evento udito più tardi non prova che la vittima fosse ancora viva.':g.arch.id==='clock'?'L’ora mostrata dalla scena non è necessariamente l’ora reale del delitto.':g.arch.id==='latch'?'La porta chiusa non dimostra che nessuno sia uscito.':'Lo scambio è avvenuto prima che la vittima usasse il bicchiere.'}</span>`}else{tlFb.className='la-feedback bad';tlFb.innerHTML=`<b>La sequenza non regge.</b><span>${misplaced} evento${misplaced>1?'i':''} ${misplaced>1?'sono':'è'} ancora fuori posizione.</span>`}checkChallenge()};
+    document.getElementById('laTimelineCheck').onclick=()=>{const misplaced=timeline.filter((e,i)=>e.order!==i).length;if(!misplaced){timelineSolved=true;tlFb.className='la-feedback success';tlFb.innerHTML=`<b>Sequenza coerente.</b><span>${esc(g.timelineHint)}</span>`}else{tlFb.className='la-feedback bad';tlFb.innerHTML=`<b>La sequenza non regge.</b><span>${misplaced} evento${misplaced>1?'i':''} ${misplaced>1?'sono':'è'} ancora fuori posizione.</span>`}checkChallenge()};
     function checkChallenge(){if(challenge)return;const complete=seenEvidence.size===g.evidence.length&&seenSuspects.size===g.suspects.length;if(complete){challenge=true;const accTab=tabs.find(x=>x.dataset.latab==='accuse');accTab.disabled=false;const flash=document.createElement('div');flash.className='la-challenge-flash';flash.innerHTML='<small>LA SFIDA</small><b>Hai tutto ciò che serve.</b><span>Nessun nuovo indizio decisivo verrà introdotto.</span>';document.body.appendChild(flash);setTimeout(()=>flash.remove(),2400)}}
     document.querySelectorAll('.la-choice-grid').forEach(grid=>grid.querySelectorAll('button').forEach(b=>b.onclick=()=>{grid.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));const label=grid.dataset.accgroup,key={Colpevole:'culprit',Movente:'motive',Metodo:'method',Alibi:'trick',Prova:'clue'}[label];acc[key]=b.dataset.id}));
     const accFb=document.getElementById('laAccFeedback');
-    document.getElementById('laAccuse').onclick=()=>{if(finished)return;if(Object.values(acc).some(x=>!x))return toast('Completa tutti i cinque elementi dell’accusa');attempts++;const keys=['culprit','motive','method','trick','clue'],correct=keys.filter(k=>acc[k]===g.solution[k]);if(correct.length===keys.length){finished=true;const sec=Math.floor((Date.now()-activeStart)/1000),score=Math.max(200,3000-attempts*140-sec*2+(timelineSolved?250:0));const culprit=g.suspects[g.culprit];accFb.className='la-feedback success';accFb.innerHTML=`<b>Accusa dimostrata.</b><span><strong>${esc(culprit.name)}</strong> ha agito per ${esc(g.culpritMotive.label.toLowerCase())}. ${esc(g.arch.methodDesc)}; ${esc(g.arch.trickDesc)}. La prova decisiva è “${esc(g.accusationOptions.clue.find(x=>x.id===g.solution.clue)?.label||g.solution.clue)}”.</span>`;setTimeout(()=>concludeSession('alibi',level,score,true,`Caso risolto: <b>${esc(culprit.name)}</b>. Tentativi d’accusa: <b>${attempts}</b>.`),1100);return}accFb.className='la-feedback bad';if(g.cfg.attemptInfo==='detail'){const wrong=keys.filter(k=>!correct.includes(k)).map(k=>({culprit:'colpevole',motive:'movente',method:'metodo',trick:'alibi',clue:'prova'}[k]));accFb.innerHTML=`<b>L’accusa non regge.</b><span>Rivedi: ${wrong.join(', ')}.</span>`}else if(g.cfg.attemptInfo==='count'){accFb.innerHTML=`<b>L’accusa non regge.</b><span>${correct.length}/5 elementi sono coerenti, ma la teoria complessiva ha ancora una falla.</span>`}else accFb.innerHTML='<b>L’accusa non regge.</b><span>Una o più parti della teoria contraddicono gli indizi. Il gioco non indica quali.</span>'};
+    document.getElementById('laAccuse').onclick=()=>{if(finished)return;if(Object.values(acc).some(x=>!x))return toast('Completa tutti i cinque elementi dell’accusa');attempts++;const keys=['culprit','motive','method','trick','clue'],correct=keys.filter(k=>acc[k]===g.solution[k]);if(correct.length===keys.length){finished=true;const sec=Math.floor((Date.now()-activeStart)/1000),score=Math.max(200,3000-attempts*140-sec*2+(timelineSolved?250:0));const culprit=g.suspects[g.culprit];accFb.className='la-feedback success';accFb.innerHTML=`<b>Accusa dimostrata.</b><span><strong>${esc(culprit.name)}</strong> ha agito per ${esc(g.culpritMotive.label.toLowerCase())}. ${esc(g.arch.methodDesc)}; ${esc(g.arch.trickDesc)}. La prova decisiva è “${esc(g.accusationOptions.clue.find(x=>x.id===g.solution.clue)?.label||g.solution.clue)}”.${esc(g.secondarySummary)}${esc(g.complicationSummary)}</span>`;setTimeout(()=>concludeSession('alibi',level,score,true,`Caso risolto: <b>${esc(culprit.name)}</b>. Tentativi d’accusa: <b>${attempts}</b>.`),1100);return}accFb.className='la-feedback bad';if(g.cfg.attemptInfo==='detail'){const wrong=keys.filter(k=>!correct.includes(k)).map(k=>({culprit:'colpevole',motive:'movente',method:'metodo',trick:'alibi',clue:'prova'}[k]));accFb.innerHTML=`<b>L’accusa non regge.</b><span>Rivedi: ${wrong.join(', ')}.</span>`}else if(g.cfg.attemptInfo==='count'){accFb.innerHTML=`<b>L’accusa non regge.</b><span>${correct.length}/5 elementi sono coerenti, ma la teoria complessiva ha ancora una falla.</span>`}else accFb.innerHTML='<b>L’accusa non regge.</b><span>Una o più parti della teoria contraddicono gli indizi. Il gioco non indica quali.</span>'};
     startTimer();
     if(!localStorage.getItem('sala_giochi_alibi_help_v1')){localStorage.setItem('sala_giochi_alibi_help_v1','1');setTimeout(()=>openHelp(),260)}
   }
