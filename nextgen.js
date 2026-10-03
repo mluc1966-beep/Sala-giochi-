@@ -1,10 +1,17 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
-   v2.6.0: EVERYBODY IS RIGHT giocabile. */
+   v2.6.2: EVERYBODY IS RIGHT ridisegnato mobile-first + versione sempre visibile. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.6.1';
+  const NEXTGEN_VERSION = '2.6.2';
+
+  // Mostra sempre la versione corrente anche dentro i giochi.
+  const sg2LegacySetHeader = setHeader;
+  setHeader = function(title, sub=''){
+    const clean=String(sub||'').replace(/\s*[·•-]\s*v?\d+(?:\.\d+){1,2}\s*$/i,'').trim();
+    sg2LegacySetHeader(title, `${clean}${clean?' · ':''}v${NEXTGEN_VERSION}`);
+  };
 
   GAME_NAMES.shiftline = 'SHIFTLINE';
   GAME_NAMES.lumina = 'LUMINA';
@@ -828,34 +835,64 @@
     setHeader('EVERYBODY IS RIGHT',LEVEL_NAMES[level]);
     const g=makeEverybody(level),session=sessionState('everybody',level);
     const selectedAssumptions=new Set(),bridgeChoices={},assign=Array(g.cfg.people).fill(null);
-    let selectedPerson=0,checks=0,finished=false;
+    let selectedPerson=0,checks=0,finished=false,currentTab='dossier';
     if(level==='easy'){
       const c=g.constraints.find(x=>x.type==='at');
       if(c)assign[c.a]=c.p;
     }
+    const testimonyCards=g.testimony.map((t,i)=>{
+      const m=String(t).match(/^([^:]+):\s*(.*)$/);
+      const speaker=m?m[1]:'Testimone',quote=m?m[2]:t;
+      return `<article class="eir-testimony-card"><div class="eir-witness"><span>${speaker.charAt(0)}</span><div><b>${speaker}</b><small>Testimonianza ${String(i+1).padStart(2,'0')}</small></div></div><blockquote>${quote}</blockquote></article>`;
+    }).join('');
     app.innerHTML=gameShell('everybody',level,`
       <div class="eir-rule"><span>REGOLA DEL CASO</span><b>Nessuno mente.</b><small>Costruisci una realtà in cui tutto possa essere vero.</small></div>
-      <div class="eir-sessionline"><span>Sessione ${session.session}/100</span><span>Ora chiave <b>${g.time}</b></span><span id="eirChecks">Verifiche 0</span></div>
-      <section class="eir-panel"><div class="eir-panel-head"><span>01</span><div><b>Testimonianze</b><small>Tutte sono vere, anche quando sembrano incompatibili.</small></div></div><div class="eir-testimonies">${g.testimony.map((t,i)=>`<article><i>${String(i+1).padStart(2,'0')}</i><p>${t}</p></article>`).join('')}</div></section>
-      <section class="eir-panel"><div class="eir-panel-head"><span>02</span><div><b>Fatti dell’ambiente</b><small>Osserva ciò che rende possibili collegamenti non ovvi.</small></div></div><div class="eir-facts">${g.challenges.map((c,i)=>`<div><span>${['◇','⌁','▧'][i%3]}</span><p>${c.fact}</p></div>`).join('')}</div></section>
-      <section class="eir-panel reality"><div class="eir-panel-head"><span>03</span><div><b>Ricostruisci la realtà</b><small>Tocca una persona, poi il luogo in cui pensi si trovasse alle ${g.time}.</small></div></div>
-        <div id="eirPeople" class="eir-people"></div>
-        <div id="eirMap" class="eir-map"></div>
-      </section>
-      <section class="eir-panel"><div class="eir-panel-head"><span>04</span><div><b>Le cose che stai dando per scontate</b><small>Seleziona solo le assunzioni che devi abbandonare.</small></div></div><div id="eirAssumptions" class="eir-assumptions">${g.assumptions.map(a=>`<button data-id="${a[0]}"><b>${a[3]}</b><span><strong>${a[1]}</strong><small>${a[2]}</small></span></button>`).join('')}</div></section>
-      <section class="eir-panel"><div class="eir-panel-head"><span>05</span><div><b>Collegamenti nascosti</b><small>Per ogni apparente contraddizione indica come può essere vera.</small></div></div><div class="eir-bridges">${g.challenges.map((c,i)=>`<div class="eir-challenge"><p><b>Paradosso ${i+1}</b> · ${c.text}</p><div>${EIR_BRIDGES[c.type].map(o=>`<button data-ch="${i}" data-bridge="${o[0]}"><span>${o[3]}</span><b>${o[1]}</b></button>`).join('')}</div></div>`).join('')}</div></section>
-      <div id="eirFeedback" class="eir-feedback">Quando la tua ricostruzione è pronta, verifica se tutte le frasi possono convivere.</div>
-      <div class="actions eir-actions"><button id="eirReset" class="secondary" type="button">⟳ Azzera tavolo</button><button id="eirVerify" class="primary" type="button">Verifica realtà</button></div>
+      <div class="eir-sessionline"><span>Sessione <b>${session.session}/100</b></span><span>Ora chiave <b>${g.time}</b></span><span id="eirChecks">Verifiche <b>0</b></span></div>
+      <nav class="eir-tabs" aria-label="Fasi del caso">
+        <button class="active" data-tab="dossier"><span>1</span><b>Dossier</b><small>Leggi i fatti</small></button>
+        <button data-tab="reality"><span>2</span><b>Ricostruzione</b><small>Colloca le persone</small></button>
+        <button data-tab="deduction"><span>3</span><b>Deduzione</b><small>Spiega il paradosso</small></button>
+      </nav>
+
+      <div class="eir-tab-panel active" data-panel="dossier">
+        <section class="eir-panel"><div class="eir-panel-head"><span>01</span><div><b>Testimonianze</b><small>Tutte sono vere, anche quando sembrano incompatibili.</small></div></div><div class="eir-testimonies">${testimonyCards}</div></section>
+        <section class="eir-panel"><div class="eir-panel-head"><span>02</span><div><b>Fatti dell’ambiente</b><small>Questi elementi possono rendere possibile ciò che sembra impossibile.</small></div></div><div class="eir-facts">${g.challenges.map((c,i)=>`<article><span>${['◇','⌁','▧'][i%3]}</span><div><b>Indizio ambientale ${i+1}</b><p>${c.fact}</p></div></article>`).join('')}</div></section>
+        <button class="eir-step-next" data-go="reality">Ho letto il dossier <span>→</span></button>
+      </div>
+
+      <div class="eir-tab-panel" data-panel="reality">
+        <section class="eir-panel reality"><div class="eir-panel-head"><span>03</span><div><b>Ricostruisci la realtà</b><small>Scegli una persona e poi il luogo in cui pensi si trovasse alle ${g.time}.</small></div></div>
+          <div class="eir-selection-hint"><span>1</span>Scegli una persona <i>→</i><span>2</span>Scegli un luogo</div>
+          <div id="eirPeople" class="eir-people"></div>
+          <div id="eirMap" class="eir-map"></div>
+        </section>
+        <button class="eir-step-next" data-go="deduction">Passa alla deduzione <span>→</span></button>
+      </div>
+
+      <div class="eir-tab-panel" data-panel="deduction">
+        <section class="eir-panel"><div class="eir-panel-head"><span>04</span><div><b>Cosa stai dando per scontato?</b><small>Seleziona solo le assunzioni che devi abbandonare.</small></div></div><div id="eirAssumptions" class="eir-assumptions">${g.assumptions.map(a=>`<button data-id="${a[0]}"><b>${a[3]}</b><span><strong>${a[1]}</strong><small>${a[2]}</small></span></button>`).join('')}</div></section>
+        <section class="eir-panel"><div class="eir-panel-head"><span>05</span><div><b>Collegamenti nascosti</b><small>Per ogni paradosso indica come può essere vero.</small></div></div><div class="eir-bridges">${g.challenges.map((c,i)=>`<div class="eir-challenge"><p><b>Paradosso ${i+1}</b><span>${c.text}</span></p><div>${EIR_BRIDGES[c.type].map(o=>`<button data-ch="${i}" data-bridge="${o[0]}"><span>${o[3]}</span><b>${o[1]}</b></button>`).join('')}</div></div>`).join('')}</div></section>
+        <div id="eirFeedback" class="eir-feedback"><b>La tua teoria</b><span>Quando sei pronto, verifica se tutte le frasi possono convivere.</span></div>
+        <div class="actions eir-actions"><button id="eirReset" class="secondary" type="button">⟳ Azzera</button><button id="eirVerify" class="primary" type="button">Verifica realtà</button></div>
+      </div>
     `);
     const people=document.getElementById('eirPeople'),map=document.getElementById('eirMap'),feedback=document.getElementById('eirFeedback');
-    function renderPeople(){people.innerHTML=g.names.map((n,i)=>`<button class="${selectedPerson===i?'selected':''} ${assign[i]!==null?'placed':''}" data-person="${i}"><span>${n[0]}</span><b>${n}</b><small>${assign[i]===null?'da collocare':g.places[assign[i]][1]}</small></button>`).join('');people.querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedPerson=+b.dataset.person;renderPeople();renderMap()})}
-    function renderMap(){map.style.setProperty('--eir-cols',g.cfg.places<=3?g.cfg.places:2);map.innerHTML=g.places.map((p,pi)=>{const here=g.names.map((n,i)=>assign[i]===pi?`<span>${n[0]}<small>${n}</small></span>`:'').join('');const adjacent=[...g.adj[pi]].map(j=>g.places[j][1]).join(' · ');return `<button class="eir-place ${assign[selectedPerson]===pi?'target':''}" data-place="${pi}"><i>${p[2]}</i><b>${p[1]}</b><small>confina con ${adjacent||'—'}</small><div>${here}</div></button>`}).join('');map.querySelectorAll('.eir-place').forEach(b=>b.onclick=()=>{assign[selectedPerson]=+b.dataset.place;renderPeople();renderMap()})}
+    function setTab(name){
+      currentTab=name;
+      document.querySelectorAll('.eir-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+      document.querySelectorAll('.eir-tab-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===name));
+      document.querySelector('.game-everybody')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+    document.querySelectorAll('.eir-tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+    document.querySelectorAll('.eir-step-next').forEach(b=>b.onclick=()=>setTab(b.dataset.go));
+    function renderPeople(){people.innerHTML=g.names.map((n,i)=>`<button class="${selectedPerson===i?'selected':''} ${assign[i]!==null?'placed':''}" data-person="${i}"><span>${n[0]}</span><div><b>${n}</b><small>${assign[i]===null?'Da collocare':g.places[assign[i]][1]}</small></div>${assign[i]!==null?'<i>✓</i>':''}</button>`).join('');people.querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedPerson=+b.dataset.person;renderPeople();renderMap()})}
+    function renderMap(){map.style.setProperty('--eir-cols',g.cfg.places<=3?g.cfg.places:2);map.innerHTML=g.places.map((p,pi)=>{const here=g.names.map((n,i)=>assign[i]===pi?`<span>${n[0]}<small>${n}</small></span>`:'').join('');const adjacent=[...g.adj[pi]].map(j=>g.places[j][1]).join(' · ');return `<button class="eir-place ${assign[selectedPerson]===pi?'target':''}" data-place="${pi}"><i>${p[2]}</i><b>${p[1]}</b><small>Confina con ${adjacent||'—'}</small><div>${here||'<em>Nessuno collocato</em>'}</div></button>`}).join('');map.querySelectorAll('.eir-place').forEach(b=>b.onclick=()=>{assign[selectedPerson]=+b.dataset.place;renderPeople();renderMap()})}
     renderPeople();renderMap();
     document.querySelectorAll('#eirAssumptions button').forEach(b=>b.onclick=()=>{const id=b.dataset.id;selectedAssumptions.has(id)?selectedAssumptions.delete(id):selectedAssumptions.add(id);b.classList.toggle('selected',selectedAssumptions.has(id))});
     document.querySelectorAll('.eir-challenge button').forEach(b=>b.onclick=()=>{const ch=+b.dataset.ch;bridgeChoices[ch]=b.dataset.bridge;b.closest('.eir-challenge').querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b))});
-    document.getElementById('eirReset').onclick=()=>{assign.fill(null);selectedAssumptions.clear();for(const k of Object.keys(bridgeChoices))delete bridgeChoices[k];checks=0;document.getElementById('eirChecks').textContent='Verifiche 0';document.querySelectorAll('#eirAssumptions button,.eir-challenge button').forEach(b=>b.classList.remove('selected'));feedback.className='eir-feedback';feedback.textContent='Tavolo azzerato. Ricostruisci la realtà da capo.';renderPeople();renderMap()};
+    document.getElementById('eirReset').onclick=()=>{assign.fill(null);selectedAssumptions.clear();for(const k of Object.keys(bridgeChoices))delete bridgeChoices[k];checks=0;document.getElementById('eirChecks').innerHTML='Verifiche <b>0</b>';document.querySelectorAll('#eirAssumptions button,.eir-challenge button').forEach(b=>b.classList.remove('selected'));feedback.className='eir-feedback';feedback.innerHTML='<b>La tua teoria</b><span>Tavolo azzerato. Ricostruisci la realtà da capo.</span>';renderPeople();renderMap();setTab('dossier')};
     document.getElementById('eirVerify').onclick=()=>{
-      if(finished)return;checks++;document.getElementById('eirChecks').textContent=`Verifiche ${checks}`;
+      if(finished)return;checks++;document.getElementById('eirChecks').innerHTML=`Verifiche <b>${checks}</b>`;
       const placed=assign.filter(x=>x!==null).length;
       const locOk=placed===g.cfg.people&&g.constraints.every(c=>eirSatisfies(assign,c,g.adj))&&g.challenges.every(c=>assign[c.observer]===g.hidden[c.observer]&&assign[c.target]===g.hidden[c.target]);
       const assOk=g.assumptionIds.length===selectedAssumptions.size&&g.assumptionIds.every(x=>selectedAssumptions.has(x));
@@ -863,10 +900,15 @@
       if(locOk&&assOk&&bridgeOk){
         finished=true;const generatedSame=assign.every((p,i)=>p===g.hidden[i]);const sec=Math.floor((Date.now()-activeStart)/1000);const score=Math.max(120,1900-checks*120-sec*2+(generatedSame?0:180));feedback.className='eir-feedback success';feedback.innerHTML=`<b>${generatedSame?'Realtà coerente.':'Soluzione alternativa valida.'}</b><span>Tutte le testimonianze possono essere vere contemporaneamente.</span><div>${g.challenges.map(c=>`<p>${c.fact}</p>`).join('')}</div>`;document.querySelector('.eir-reality-flash')?.remove();const flash=document.createElement('div');flash.className='eir-reality-flash';flash.textContent='EVERYBODY IS RIGHT';document.body.appendChild(flash);setTimeout(()=>flash.remove(),1100);setTimeout(()=>concludeSession('everybody',level,score,true,`${generatedSame?'Hai ricostruito una realtà coerente.':'Hai trovato una soluzione alternativa coerente.'} Verifiche: <b>${checks}</b>.`),950);return;
       }
-      const parts=[];if(placed<g.cfg.people)parts.push(`${g.cfg.people-placed} persone ancora da collocare`);else if(!locOk)parts.push('la disposizione non soddisfa ancora tutte le testimonianze');if(!assOk)parts.push('le assunzioni selezionate non spiegano ancora tutti i paradossi');if(!bridgeOk)parts.push('almeno un collegamento nascosto non è compatibile con i fatti');feedback.className='eir-feedback bad';feedback.innerHTML=`<b>Questa realtà non regge ancora.</b><span>${parts.join(' · ')}</span>`;
+      const parts=[];
+      if(placed<g.cfg.people)parts.push(`${g.cfg.people-placed} persone ancora da collocare`);else if(!locOk)parts.push('la disposizione non soddisfa ancora tutte le testimonianze');
+      if(!assOk)parts.push('le assunzioni selezionate non spiegano ancora tutti i paradossi');
+      if(!bridgeOk)parts.push('almeno un collegamento nascosto non è compatibile con i fatti');
+      feedback.className='eir-feedback bad';feedback.innerHTML=`<b>Questa realtà non regge ancora.</b><span>${parts.join(' · ')}</span>`;
+      setTab(placed<g.cfg.people||!locOk?'reality':'deduction');
     };
     startTimer();
-    if(!localStorage.getItem('sala_giochi_everybody_help_v1')){localStorage.setItem('sala_giochi_everybody_help_v1','1');setTimeout(()=>openHelp(),260)}
+    if(!localStorage.getItem('sala_giochi_everybody_help_v2')){localStorage.setItem('sala_giochi_everybody_help_v2','1');setTimeout(()=>openHelp(),260)}
   }
 
   // Ridisegna la Home già caricata da app.js includendo la nuova sezione.
