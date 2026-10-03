@@ -1,10 +1,19 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
-   v2.8.0: L'ULTIMO ALIBI attivo; giallo fair-play con indizi, sospetti, timeline e accusa finale. */
+   v2.8.2: aggiunti Gioco del 15 e Puzzle ai Giochi classici. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.8.1';
+  const NEXTGEN_VERSION = '2.8.2';
+
+  GAME_NAMES.fifteen = 'Gioco del 15';
+  GAME_NAMES.picturepuzzle = 'Puzzle';
+  ICONS.fifteen = '▦';
+  ICONS.picturepuzzle = '🧩';
+  SESSION_GAMES.add('fifteen');
+  SESSION_GAMES.add('picturepuzzle');
+  DEFAULT_GAME_PALETTES.fifteen = 'gold';
+  DEFAULT_GAME_PALETTES.picturepuzzle = 'forest';
 
   GAME_NAMES.shiftline = 'SHIFTLINE';
   GAME_NAMES.lumina = 'LUMINA';
@@ -26,6 +35,39 @@
   DEFAULT_GAME_PALETTES.everybody = 'steel';
   DEFAULT_GAME_PALETTES.another = 'violet';
   DEFAULT_GAME_PALETTES.alibi = 'gold';
+
+  GAME_HELP.fifteen = {
+    title: 'Gioco del 15',
+    goal: 'Riordina le quindici tessere numerate facendo scorrere una tessera alla volta nello spazio vuoto.',
+    steps: [
+      'Tocca una tessera adiacente allo spazio vuoto per farla scorrere.',
+      'Ricostruisci l’ordine da 1 a 15, lasciando lo spazio vuoto in basso a destra.',
+      'Puoi annullare le ultime mosse e, finché disponibili, chiedere un suggerimento.',
+      'La difficoltà aumenta con un mescolamento iniziale più profondo e con meno suggerimenti.'
+    ],
+    example: 'Se lo spazio vuoto è accanto alla tessera 12, tocca 12: la tessera scorre e il vuoto prende il suo posto.',
+    tips: [
+      'Lavora prima sulle righe superiori e lascia le ultime due righe per la fase finale.',
+      'Una configurazione nasce sempre da mosse legali partendo dalla tavola risolta: è quindi sempre risolvibile.',
+      'Il numero di mosse incide sul punteggio, ma non esiste un limite che interrompa la partita.'
+    ]
+  };
+
+  GAME_HELP.picturepuzzle = {
+    title: 'Puzzle',
+    goal: 'Ricostruisci l’immagine rimettendo ogni tessera nella sua posizione corretta.',
+    steps: [
+      'Osserva l’immagine completa di riferimento.',
+      'Tocca una tessera e poi una seconda tessera per scambiarle.',
+      'Continua finché l’immagine non è ricomposta completamente.',
+      'La difficoltà aumenta passando da una griglia 3×3 fino a 6×6 e riducendo i suggerimenti.'
+    ],
+    tips: [
+      'Cerca prima elementi facilmente riconoscibili: bordi, luci, linee nette e soggetti principali.',
+      'Ai livelli Facile e Medio le tessere già nella posizione corretta vengono evidenziate.',
+      'Un suggerimento sistema automaticamente una tessera fuori posto.'
+    ]
+  };
 
   GAME_HELP.shiftline = {
     title: 'SHIFTLINE',
@@ -131,6 +173,8 @@
     ['anagram','Anagrammi','Ricomponi le lettere','anagram'],
     ['quiz','Quiz','Cultura generale e curiosità','quiz'],
     ['logic','Logica','Sequenze, deduzioni e codici','logic'],
+    ['fifteen','Gioco del 15','Riordina le quindici tessere','fifteen'],
+    ['picturepuzzle','Puzzle','Ricostruisci l’immagine','picturepuzzle'],
     ['escape','Escape Room','Esplora, collega gli indizi, esci','escape']
   ];
 
@@ -330,7 +374,7 @@
 
   startGame = function startGameV25(game, level, opts = {}) {
     clearSG2Mode();
-    if (game !== 'shiftline' && game !== 'lumina' && game !== 'everybody' && game !== 'another' && game !== 'alibi') return legacyStartGame(game, level, opts);
+    if (!['shiftline','lumina','everybody','another','alibi','fifteen','picturepuzzle'].includes(game)) return legacyStartGame(game, level, opts);
     activeSaved = false;
     activeGame = game;
     activeLevel = level;
@@ -346,7 +390,9 @@
     else if(game==='lumina') startLumina(level);
     else if(game==='everybody') startEverybody(level);
     else if(game==='another') startAnother(level);
-    else startAlibi(level);
+    else if(game==='alibi') startAlibi(level);
+    else if(game==='fifteen') startFifteen(level);
+    else startPicturePuzzle(level);
   };
 
   const DIRS = [
@@ -683,6 +729,193 @@
 
     render();
     startTimer();
+  }
+
+
+  // ---------- GIOCO DEL 15 ----------
+  const FIFTEEN_CONFIG={
+    easy:{scramble:24,hints:5,label:'Mescolamento leggero'},
+    medium:{scramble:55,hints:3,label:'Mescolamento medio'},
+    hard:{scramble:95,hints:1,label:'Mescolamento profondo'},
+    extreme:{scramble:150,hints:0,label:'Mescolamento estremo'}
+  };
+
+  function fifteenSolved(board){return board.every((v,i)=>i===15?v===0:v===i+1)}
+  function fifteenNeighbors(blank){
+    const r=Math.floor(blank/4),c=blank%4,out=[];
+    if(r>0)out.push(blank-4); if(r<3)out.push(blank+4);
+    if(c>0)out.push(blank-1); if(c<3)out.push(blank+1);
+    return out;
+  }
+  function fifteenDistance(board){
+    let total=0;
+    board.forEach((v,i)=>{if(!v)return;const target=v-1;total+=Math.abs(Math.floor(i/4)-Math.floor(target/4))+Math.abs((i%4)-(target%4))});
+    return total;
+  }
+  function makeFifteen(level){
+    const cfg=FIFTEEN_CONFIG[level],board=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0];
+    let blank=15,last=-1;
+    for(let k=0;k<cfg.scramble;k++){
+      let options=fifteenNeighbors(blank).filter(x=>x!==last);
+      if(!options.length)options=fifteenNeighbors(blank);
+      const pick=options[Math.floor(activeRng()*options.length)];
+      [board[blank],board[pick]]=[board[pick],board[blank]];
+      last=blank;blank=pick;
+    }
+    if(fifteenSolved(board)){
+      const pick=fifteenNeighbors(blank)[0];
+      [board[blank],board[pick]]=[board[pick],board[blank]];
+      blank=pick;
+    }
+    return {board,blank};
+  }
+
+  function startFifteen(level){
+    setHeader('Gioco del 15',LEVEL_NAMES[level]);
+    const cfg=FIFTEEN_CONFIG[level],made=makeFifteen(level),board=made.board;
+    let blank=made.blank,moves=0,hints=cfg.hints,history=[],finished=false;
+    app.innerHTML=gameShell('fifteen',level,`
+      <div class="classic-mini-head"><div><span>PUZZLE NUMERICO</span><b>${cfg.label}</b></div><div class="classic-mini-stat"><small>MOSSE</small><strong id="fifteenMoves">0</strong></div></div>
+      <div class="fifteen-wrap">
+        <div id="fifteenBoard" class="fifteen-board" aria-label="Gioco del 15"></div>
+        <div class="fifteen-target"><small>OBIETTIVO</small><div>${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(n=>`<span>${n}</span>`).join('')}<span class="empty"></span></div></div>
+      </div>
+      <div class="actions fifteen-actions">
+        <button id="fifteenUndo" class="secondary" disabled>↶ Annulla</button>
+        <button id="fifteenHint" class="secondary" ${hints?'':'disabled'}>💡 Suggerimento (${hints})</button>
+      </div>
+      <div id="fifteenMsg" class="message">Tocca una tessera accanto allo spazio vuoto.</div>
+    `);
+    const el=document.getElementById('fifteenBoard'),msg=document.getElementById('fifteenMsg'),undo=document.getElementById('fifteenUndo'),hint=document.getElementById('fifteenHint');
+    function moveTile(idx,record=true){
+      if(finished||!fifteenNeighbors(blank).includes(idx))return false;
+      const oldBlank=blank;
+      if(record)history.push({idx,oldBlank});
+      [board[blank],board[idx]]=[board[idx],board[blank]];
+      blank=idx;
+      if(record)moves++;
+      render();
+      if(fifteenSolved(board))win();
+      return true;
+    }
+    function render(){
+      el.innerHTML=board.map((v,i)=>v?`<button class="fifteen-tile ${v===i+1?'correct':''}" data-i="${i}" aria-label="Tessera ${v}">${v}</button>`:`<span class="fifteen-hole" aria-label="Spazio vuoto"></span>`).join('');
+      el.querySelectorAll('button').forEach(b=>b.onclick=()=>moveTile(+b.dataset.i,true));
+      document.getElementById('fifteenMoves').textContent=moves;
+      undo.disabled=!history.length;
+      hint.disabled=!hints;
+      hint.textContent=`💡 Suggerimento (${hints})`;
+    }
+    undo.onclick=()=>{
+      if(finished||!history.length)return;
+      const h=history.pop();
+      const currentBlank=blank;
+      [board[currentBlank],board[h.oldBlank]]=[board[h.oldBlank],board[currentBlank]];
+      blank=h.oldBlank;moves=Math.max(0,moves-1);render();msg.textContent='Ultima mossa annullata.';
+    };
+    hint.onclick=()=>{
+      if(finished||!hints)return;
+      const before=fifteenDistance(board),cands=fifteenNeighbors(blank);
+      let best=cands[0],bestScore=Infinity;
+      for(const idx of cands){
+        [board[blank],board[idx]]=[board[idx],board[blank]];
+        const d=fifteenDistance(board);
+        [board[blank],board[idx]]=[board[idx],board[blank]];
+        if(d<bestScore){bestScore=d;best=idx}
+      }
+      hints--;hint.textContent=`💡 Suggerimento (${hints})`;if(!hints)hint.disabled=true;
+      const tile=board[best];msg.innerHTML=`Prova a muovere la tessera <b>${tile}</b>${bestScore<before?' per avvicinarti alla soluzione.':'. È una buona mossa per sbloccare la posizione.'}`;
+      el.querySelector(`[data-i="${best}"]`)?.classList.add('hinted');
+      setTimeout(()=>el.querySelector(`[data-i="${best}"]`)?.classList.remove('hinted'),900);
+    };
+    function win(){
+      finished=true;const sec=Math.floor((Date.now()-activeStart)/1000);
+      const score=Math.max(100,1800-moves*8-sec*2-(cfg.hints-hints)*25);
+      msg.innerHTML=`<b>Completato.</b> Hai riordinato il Gioco del 15 in ${moves} mosse.`;
+      setTimeout(()=>concludeSession('fifteen',level,score,true,`Tavola completata in <b>${moves}</b> mosse. Punteggio: <b>${score}</b>.`),650);
+    }
+    render();startTimer();
+  }
+
+  // ---------- PUZZLE A IMMAGINE ----------
+  const PICTURE_PUZZLE_CONFIG={
+    easy:{size:3,hints:4,mark:true,label:'9 tessere'},
+    medium:{size:4,hints:3,mark:true,label:'16 tessere'},
+    hard:{size:5,hints:1,mark:false,label:'25 tessere'},
+    extreme:{size:6,hints:0,mark:false,label:'36 tessere'}
+  };
+  const PICTURE_PUZZLE_IMAGES=[
+    ['assets/home-room.svg','Tramonto in salotto'],
+    ['assets/classic-desk.svg','Tavolo dei giochi'],
+    ['assets/future-city.svg','Città del futuro'],
+    ['assets/ng-lumina.svg','Lumina'],
+    ['assets/ng-another.svg','Another World'],
+    ['assets/ng-alibi.svg','Il caso']
+  ];
+  function shufflePuzzleIds(n){
+    const a=Array.from({length:n*n},(_,i)=>i);
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(activeRng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+    if(a.every((v,i)=>v===i))[a[0],a[1]]=[a[1],a[0]];
+    return a;
+  }
+  function startPicturePuzzle(level){
+    setHeader('Puzzle',LEVEL_NAMES[level]);
+    const cfg=PICTURE_PUZZLE_CONFIG[level];
+    const pic=PICTURE_PUZZLE_IMAGES[Math.floor(activeRng()*PICTURE_PUZZLE_IMAGES.length)];
+    const ids=shufflePuzzleIds(cfg.size);
+    let selected=null,moves=0,hints=cfg.hints,finished=false;
+    app.innerHTML=gameShell('picturepuzzle',level,`
+      <div class="classic-mini-head"><div><span>PUZZLE A IMMAGINE</span><b>${cfg.label} · ${esc(pic[1])}</b></div><div class="classic-mini-stat"><small>SCAMBI</small><strong id="picMoves">0</strong></div></div>
+      <div class="picture-puzzle-layout">
+        <div class="picture-reference"><small>IMMAGINE COMPLETA</small><img src="${pic[0]}" alt="Immagine completa di riferimento: ${esc(pic[1])}"></div>
+        <div id="pictureBoard" class="picture-board" style="--puzzle-n:${cfg.size};--puzzle-img:url('${pic[0]}')" aria-label="Puzzle ${cfg.size} per ${cfg.size}"></div>
+      </div>
+      <div class="actions picture-actions">
+        <button id="pictureHint" class="secondary" ${hints?'':'disabled'}>💡 Suggerimento (${hints})</button>
+        <button id="pictureResetSelection" class="secondary" disabled>Annulla selezione</button>
+      </div>
+      <div id="pictureMsg" class="message">Tocca due tessere per scambiarle.</div>
+    `);
+    const board=document.getElementById('pictureBoard'),hint=document.getElementById('pictureHint'),cancel=document.getElementById('pictureResetSelection'),msg=document.getElementById('pictureMsg');
+    function isSolved(){return ids.every((v,i)=>v===i)}
+    function render(){
+      const n=cfg.size;
+      board.innerHTML=ids.map((tile,pos)=>{
+        const x=tile%n,y=Math.floor(tile/n),px=n===1?0:x/(n-1)*100,py=n===1?0:y/(n-1)*100;
+        const correct=tile===pos;
+        return `<button class="picture-piece ${selected===pos?'selected':''} ${cfg.mark&&correct?'correct':''}" data-pos="${pos}" style="background-size:${n*100}% ${n*100}%;background-position:${px}% ${py}%" aria-label="Tessera ${pos+1}"></button>`;
+      }).join('');
+      board.querySelectorAll('button').forEach(b=>b.onclick=()=>selectPiece(+b.dataset.pos));
+      document.getElementById('picMoves').textContent=moves;
+      cancel.disabled=selected===null;
+      hint.disabled=!hints;
+      hint.textContent=`💡 Suggerimento (${hints})`;
+    }
+    function selectPiece(pos){
+      if(finished)return;
+      if(selected===null){selected=pos;msg.textContent='Prima tessera selezionata. Ora scegli quella con cui scambiarla.';render();return}
+      if(selected===pos){selected=null;msg.textContent='Selezione annullata.';render();return}
+      [ids[selected],ids[pos]]=[ids[pos],ids[selected]];
+      selected=null;moves++;render();
+      if(isSolved())win();else msg.textContent='Scambio effettuato. Continua a ricomporre l’immagine.';
+    }
+    cancel.onclick=()=>{selected=null;render();msg.textContent='Selezione annullata.'};
+    hint.onclick=()=>{
+      if(!hints||finished)return;
+      const wrong=ids.findIndex((v,i)=>v!==i);if(wrong<0)return;
+      const targetPos=ids.indexOf(wrong);
+      [ids[wrong],ids[targetPos]]=[ids[targetPos],ids[wrong]];
+      hints--;moves++;selected=null;render();
+      msg.innerHTML=`Una tessera è stata rimessa nella posizione corretta.`;
+      if(isSolved())win();
+    };
+    function win(){
+      finished=true;const sec=Math.floor((Date.now()-activeStart)/1000);
+      const score=Math.max(100,2000-moves*10-sec*2-(cfg.hints-hints)*45);
+      msg.innerHTML=`<b>Immagine ricomposta.</b> ${moves} scambi.`;
+      setTimeout(()=>concludeSession('picturepuzzle',level,score,true,`Puzzle completato in <b>${moves}</b> scambi. Punteggio: <b>${score}</b>.`),650);
+    }
+    render();startTimer();
   }
 
 
