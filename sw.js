@@ -1,4 +1,4 @@
-const CACHE='sala-giochi-v2.5.0';
+const CACHE='sala-giochi-v2.5.1';
 const ASSETS=[
   './','./index.html','./styles.css','./nextgen.css','./app.js','./nextgen.js','./manifest.webmanifest','./icon.svg','./escape-room-bg.jpg',
   './assets/home-room.svg','./assets/classic-desk.svg','./assets/future-city.svg','./assets/ng-shiftline.svg','./assets/ng-lumina.svg','./assets/ng-everybody.svg','./assets/ng-another.svg','./assets/ng-alibi.svg'

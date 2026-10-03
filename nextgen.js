@@ -575,25 +575,43 @@
       <div class="lumina-topbar">
         <button id="luminaBack" class="lumina-circle" aria-label="Torna a Nuova generazione">←</button>
         <div class="lumina-brand"><b>LUMINA</b><span>Sessione ${session.session}/100 · ${LEVEL_NAMES[level]}</span></div>
-        <div class="lumina-top-actions"><button id="luminaSound" class="lumina-circle" aria-label="Audio">♪</button><button id="luminaFinish" class="lumina-pill">Nuovo mondo</button></div>
+        <div class="lumina-top-actions"><button id="luminaHelp" class="lumina-circle" aria-label="Come si gioca">?</button><button id="luminaSound" class="lumina-circle" aria-label="Attiva audio">🔈</button><button id="luminaFinish" class="lumina-pill">Nuovo mondo</button></div>
       </div>
       <div class="lumina-discovery"><span id="luminaBloomCount">0</span><small>fioriture</small></div>
       <div class="lumina-modebar" role="toolbar" aria-label="Gesti Lumina">
-        <button class="active" data-mode="light" aria-label="Luce">✦</button>
-        <button data-mode="bloom" aria-label="Fiore">❀</button>
-        <button data-mode="vortex" aria-label="Vortice">◎</button>
+        <button class="active" data-mode="light" aria-label="Luce" title="Luce">✦</button>
+        <button data-mode="bloom" aria-label="Fiore" title="Fiore">❀</button>
+        <button data-mode="vortex" aria-label="Vortice" title="Vortice">◎</button>
       </div>
       <div id="luminaHint" class="lumina-hint">Tocca o trascina nello spazio</div>
+      <div id="luminaGuide" class="lumina-guide" aria-hidden="true">
+        <div class="lumina-guide-card" role="dialog" aria-modal="true" aria-labelledby="luminaGuideTitle">
+          <button id="luminaGuideClose" class="lumina-guide-x" type="button" aria-label="Chiudi istruzioni">×</button>
+          <span class="lumina-guide-kicker">COME SI GIOCA</span>
+          <h2 id="luminaGuideTitle">Lascia che il mondo reagisca ai tuoi gesti</h2>
+          <p class="lumina-guide-intro">LUMINA non ha una soluzione da trovare: esplora, combina i gesti e osserva cosa nasce.</p>
+          <div class="lumina-guide-grid">
+            <div><b>☝</b><span><strong>Tocca</strong>Genera un impulso di luce.</span></div>
+            <div><b>〰</b><span><strong>Trascina</strong>Disegna una corrente che muove le particelle.</span></div>
+            <div><b>✦</b><span><strong>Luce</strong>Attira e accompagna lo sciame.</span></div>
+            <div><b>❀</b><span><strong>Fiore</strong>Crea fioriture luminose nel punto toccato.</span></div>
+            <div><b>◎</b><span><strong>Vortice</strong>Fa ruotare le particelle attorno al dito.</span></div>
+            <div><b>🔊</b><span><strong>Audio</strong>Il pulsante in alto attiva o disattiva l'ambiente sonoro.</span></div>
+          </div>
+          <p class="lumina-guide-note">Non esiste Game Over. Quando vuoi cambiare scenario premi <b>Nuovo mondo</b>.</p>
+          <button id="luminaGuideStart" class="lumina-guide-start" type="button">Inizia a esplorare</button>
+        </div>
+      </div>
     </div>`;
     const canvas=document.getElementById('luminaCanvas'),ctx=canvas.getContext('2d',{alpha:false});
-    let w=0,h=0,dpr=1,particles=[],blooms=[],pointer=null,mode='light',running=true,bloomCount=0,frame=0,soundOn=false,audioCtx=null,audioNodes=[];
+    let w=0,h=0,dpr=1,particles=[],blooms=[],pointer=null,mode='light',running=true,bloomCount=0,frame=0,soundOn=false,audioCtx=null,audioNodes=[],audioMaster=null;
     const hueBase={easy:196,medium:204,hard:218,extreme:232}[level];
     const rnd=(a=1,b=0)=>b+(a-b)*activeRng();
     function resize(){dpr=Math.min(2,window.devicePixelRatio||1);w=innerWidth;h=innerHeight;canvas.width=w*dpr;canvas.height=h*dpr;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
     function spawnParticle(x=rnd(w),y=rnd(h),energy=.4){const a=rnd(Math.PI*2),sp=rnd(.7,.15)*cfg.speed;return{x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:rnd(3.2,1.1),life:rnd(1,.45),energy,hue:hueBase+rnd(55,-20),phase:rnd(Math.PI*2)}}
     function seed(){particles=Array.from({length:cfg.count},()=>spawnParticle())}
     function burst(x,y,n=12,power=1){for(let i=0;i<n;i++){const p=spawnParticle(x+rnd(28,-28),y+rnd(28,-28),power);const a=rnd(Math.PI*2),sp=rnd(2.2,.5)*power;p.vx+=Math.cos(a)*sp;p.vy+=Math.sin(a)*sp;particles.push(p)}while(particles.length>cfg.count*1.8)particles.shift()}
-    function addBloom(x,y,scale=1,countIt=true){blooms.push({x,y,r:8,max:rnd(115,62)*scale,life:1,hue:hueBase+rnd(70,-15)});if(countIt){bloomCount++;document.getElementById('luminaBloomCount').textContent=bloomCount}burst(x,y,18,1.2)}
+    function addBloom(x,y,scale=1,countIt=true){blooms.push({x,y,r:8,max:rnd(115,62)*scale,life:1,hue:hueBase+rnd(70,-15)});if(countIt){bloomCount++;document.getElementById('luminaBloomCount').textContent=bloomCount;playChime(.96+rnd(.16,0))}burst(x,y,18,1.2)}
     function forceAt(p){let fx=Math.sin((p.y+frame*.45)*.008+p.phase)*.012,fy=Math.cos((p.x-frame*.35)*.007+p.phase)*.012;if(pointer){let dx=pointer.x-p.x,dy=pointer.y-p.y,dist=Math.hypot(dx,dy)+1;if(dist<220){let s=(1-dist/220);if(mode==='vortex'){fx+=(-dy/dist)*s*.19;fy+=(dx/dist)*s*.19}else if(mode==='bloom'){fx+=(dx/dist)*s*.08;fy+=(dy/dist)*s*.08}else{fx+=(dx/dist)*s*.12;fy+=(dy/dist)*s*.12}}}return[fx,fy]}
     function update(){for(const p of particles){const[fx,fy]=forceAt(p);p.vx=(p.vx+fx)*.992;p.vy=(p.vy+fy)*.992;const lim=2.3*cfg.speed+.4,sp=Math.hypot(p.vx,p.vy);if(sp>lim){p.vx=p.vx/sp*lim;p.vy=p.vy/sp*lim}p.x+=p.vx;p.y+=p.vy;if(p.x<-20)p.x=w+20;if(p.x>w+20)p.x=-20;if(p.y<-20)p.y=h+20;if(p.y>h+20)p.y=-20;p.phase+=.009}blooms.forEach(b=>{b.r+=(b.max-b.r)*.035;b.life-=.0045});blooms=blooms.filter(b=>b.life>0)}
     function draw(){ctx.fillStyle='rgba(2,8,22,.18)';ctx.fillRect(0,0,w,h);const bg=ctx.createRadialGradient(w*.5,h*.45,20,w*.5,h*.5,Math.max(w,h)*.7);bg.addColorStop(0,'rgba(15,58,118,.055)');bg.addColorStop(1,'rgba(2,7,18,.02)');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);ctx.globalCompositeOperation='lighter';for(const b of blooms){ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.strokeStyle=`hsla(${b.hue},95%,72%,${Math.max(0,b.life)*.34})`;ctx.lineWidth=2.2;ctx.stroke();ctx.beginPath();ctx.arc(b.x,b.y,b.r*.55,0,Math.PI*2);ctx.strokeStyle=`hsla(${b.hue+45},95%,76%,${Math.max(0,b.life)*.22})`;ctx.stroke()}for(const p of particles){const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);glow.addColorStop(0,`hsla(${p.hue},100%,86%,${.72*p.life})`);glow.addColorStop(.28,`hsla(${p.hue},100%,65%,${.35*p.life})`);glow.addColorStop(1,`hsla(${p.hue},100%,50%,0)`);ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,p.r*5,0,Math.PI*2);ctx.fill();ctx.fillStyle=`hsla(${p.hue},100%,90%,${.9*p.life})`;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalCompositeOperation='source-over'}
@@ -604,11 +622,19 @@
     function up(){if(!pointer)return;const held=performance.now()-pointer.start;if((pointer.travel>140||held>650)&&activeRng()<.8)addBloom(pointer.x,pointer.y,mode==='vortex'?1.25:1);pointer=null}
     canvas.addEventListener('pointerdown',down,{passive:false});canvas.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up,{passive:true});
     document.querySelectorAll('.lumina-modebar button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('.lumina-modebar button').forEach(x=>x.classList.toggle('active',x===b));if(mode==='vortex')addBloom(w*.5,h*.5,.95)});
-    function cleanup(){running=false;window.removeEventListener('pointerup',up);window.removeEventListener('resize',resize);if(audioCtx){try{audioNodes.forEach(n=>n.stop?.());audioCtx.close()}catch{}audioCtx=null;audioNodes=[]}}
+    function setGuide(open){const g=document.getElementById('luminaGuide');if(!g)return;g.classList.toggle('show',open);g.setAttribute('aria-hidden',open?'false':'true')}
+    function playChime(mult=1){if(!soundOn||!audioCtx||!audioMaster)return;try{const now=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(523.25*mult,now);o.frequency.exponentialRampToValueAtTime(659.25*mult,now+.42);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.055,now+.025);g.gain.exponentialRampToValueAtTime(.0001,now+.75);o.connect(g);g.connect(audioMaster);o.start(now);o.stop(now+.78)}catch{}}
+    async function startAmbientAudio(){const AC=window.AudioContext||window.webkitAudioContext;if(!AC){document.getElementById('luminaHint').textContent='Audio non disponibile su questo browser';return false}try{audioCtx=new AC();await audioCtx.resume();audioMaster=audioCtx.createGain();audioMaster.gain.setValueAtTime(.0001,audioCtx.currentTime);audioMaster.gain.exponentialRampToValueAtTime(.12,audioCtx.currentTime+.45);const filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=1350;filter.Q.value=.7;filter.connect(audioMaster);audioMaster.connect(audioCtx.destination);const lfo=audioCtx.createOscillator(),lfoGain=audioCtx.createGain();lfo.frequency.value=.09;lfoGain.gain.value=.012;lfo.connect(lfoGain);for(const [f,vol,type] of [[220,.07,'sine'],[329.63,.045,'sine'],[440,.025,'triangle']]){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=f;g.gain.value=vol;lfoGain.connect(g.gain);o.connect(g);g.connect(filter);o.start();audioNodes.push(o)}lfo.start();audioNodes.push(lfo);soundOn=true;const b=document.getElementById('luminaSound');b.classList.add('active');b.textContent='🔊';b.setAttribute('aria-label','Disattiva audio');playChime(1);document.getElementById('luminaHint').textContent='Audio attivo';setTimeout(()=>{const h=document.getElementById('luminaHint');if(h)h.textContent='Tocca o trascina nello spazio'},1100);return true}catch{soundOn=false;return false}}
+    async function stopAmbientAudio(){soundOn=false;const b=document.getElementById('luminaSound');if(b){b.classList.remove('active');b.textContent='🔈';b.setAttribute('aria-label','Attiva audio')}if(audioCtx){try{audioNodes.forEach(n=>n.stop?.());await audioCtx.close()}catch{}audioCtx=null;audioNodes=[];audioMaster=null}}
+    function cleanup(){running=false;window.removeEventListener('pointerup',up);window.removeEventListener('resize',resize);if(audioCtx){try{audioNodes.forEach(n=>n.stop?.());audioCtx.close()}catch{}audioCtx=null;audioNodes=[];audioMaster=null}}
     document.getElementById('luminaBack').onclick=()=>{cleanup();renderNextGenFamily()};
-    document.getElementById('luminaSound').onclick=async e=>{soundOn=!soundOn;e.currentTarget.classList.toggle('active',soundOn);if(soundOn){const AC=window.AudioContext||window.webkitAudioContext;if(!AC){soundOn=false;e.currentTarget.classList.remove('active');return}audioCtx=new AC();const master=audioCtx.createGain();master.gain.value=.025;master.connect(audioCtx.destination);const lfo=audioCtx.createOscillator(),lfoGain=audioCtx.createGain();lfo.frequency.value=.07;lfoGain.gain.value=.012;lfo.connect(lfoGain);for(const f of [110,164.81]){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.045;lfoGain.connect(g.gain);o.connect(g);g.connect(master);o.start();audioNodes.push(o)}lfo.start();audioNodes.push(lfo)}else if(audioCtx){try{audioNodes.forEach(n=>n.stop?.());await audioCtx.close()}catch{}audioCtx=null;audioNodes=[]}};
+    document.getElementById('luminaHelp').onclick=()=>setGuide(true);
+    document.getElementById('luminaGuideClose').onclick=()=>setGuide(false);
+    document.getElementById('luminaGuideStart').onclick=()=>{localStorage.setItem('sala_giochi_lumina_guide_v1','1');setGuide(false)};
+    document.getElementById('luminaGuide').onclick=e=>{if(e.target.id==='luminaGuide')setGuide(false)};
+    document.getElementById('luminaSound').onclick=async()=>{if(soundOn)await stopAmbientAudio();else await startAmbientAudio()};
     document.getElementById('luminaFinish').onclick=()=>{if(!running)return;cleanup();clearSG2Mode();const score=Math.max(1,bloomCount)*100;concludeSession('lumina',level,score,true,`Hai lasciato questo mondo con <b>${bloomCount}</b> fioriture luminose. Nessun punteggio da inseguire: puoi semplicemente entrare nel prossimo.`)};
-    window.addEventListener('resize',resize,{passive:true});resize();ctx.fillStyle='#020816';ctx.fillRect(0,0,w,h);seed();for(let i=0;i<3;i++)addBloom(rnd(w*.78,w*.22),rnd(h*.72,h*.22),rnd(.9,.5),false);startTimer();loop();
+    window.addEventListener('resize',resize,{passive:true});resize();ctx.fillStyle='#020816';ctx.fillRect(0,0,w,h);seed();for(let i=0;i<3;i++)addBloom(rnd(w*.78,w*.22),rnd(h*.72,h*.22),rnd(.9,.5),false);startTimer();loop();if(!localStorage.getItem('sala_giochi_lumina_guide_v1'))setTimeout(()=>setGuide(true),260);
   }
 
   // Ridisegna la Home già caricata da app.js includendo la nuova sezione.

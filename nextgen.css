@@ -220,3 +220,20 @@ body.sg2-lumina-play .app{max-width:none!important;padding:0!important;margin:0!
   .sg2-lumina-preview{min-height:300px}.sg2-lumina-features{gap:5px}.sg2-lumina-features span{font-size:.61rem;padding:.6rem .22rem}
   .lumina-topbar{grid-template-columns:auto 1fr auto}.lumina-brand span{display:none}.lumina-pill{padding:0 12px;font-size:.72rem}.lumina-top-actions{gap:5px}.lumina-discovery{top:70px;right:12px}.lumina-modebar button{width:46px;height:46px}
 }
+
+/* LUMINA v2.5.1 — guida integrata */
+.lumina-guide{position:absolute;z-index:30;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,5,18,.64);backdrop-filter:blur(12px);opacity:0;visibility:hidden;transition:.22s ease;pointer-events:none}
+.lumina-guide.show{opacity:1;visibility:visible;pointer-events:auto}
+.lumina-guide-card{position:relative;width:min(720px,94vw);max-height:min(88vh,760px);overflow:auto;border-radius:28px;padding:28px;background:linear-gradient(160deg,rgba(8,29,61,.97),rgba(3,12,31,.98));border:1px solid rgba(117,224,255,.28);box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 0 55px rgba(71,139,255,.08);color:#eefcff}
+.lumina-guide-x{position:absolute;right:15px;top:13px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(150,229,255,.2);background:rgba(255,255,255,.05);color:white;font-size:1.5rem}
+.lumina-guide-kicker{display:block;color:#76e5ff;font-size:.68rem;font-weight:900;letter-spacing:.18em;margin-bottom:.55rem}
+.lumina-guide-card h2{margin:.1rem 46px .55rem 0;font-size:clamp(1.6rem,4vw,2.35rem);line-height:1.06;color:white}
+.lumina-guide-intro{color:rgba(230,248,255,.74);line-height:1.5;margin:0 0 1.15rem}
+.lumina-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.lumina-guide-grid>div{display:flex;align-items:center;gap:12px;min-height:74px;padding:11px 12px;border-radius:17px;background:rgba(255,255,255,.045);border:1px solid rgba(107,213,255,.13)}
+.lumina-guide-grid b{flex:0 0 38px;text-align:center;font-size:1.6rem;color:#9af1ff;text-shadow:0 0 17px rgba(83,215,255,.3)}
+.lumina-guide-grid span{display:flex;flex-direction:column;gap:2px;color:rgba(231,249,255,.72);font-size:.76rem;line-height:1.28}
+.lumina-guide-grid strong{font-size:.82rem;color:white}
+.lumina-guide-note{margin:1rem 0 .9rem;padding:.75rem .9rem;border-radius:14px;background:rgba(100,125,255,.09);color:rgba(235,247,255,.82);font-size:.78rem;line-height:1.4}
+.lumina-guide-start{width:100%;min-height:48px;border:0;border-radius:999px;background:linear-gradient(90deg,#39d9ff,#7781ff);color:#031022;font-weight:950;letter-spacing:.02em;box-shadow:0 0 28px rgba(68,198,255,.23)}
+@media(max-width:620px){.lumina-guide-card{padding:23px 16px 17px;border-radius:23px}.lumina-guide-grid{grid-template-columns:1fr;gap:6px}.lumina-guide-grid>div{min-height:58px}.lumina-guide-card h2{font-size:1.55rem}.lumina-guide-intro{font-size:.82rem}.lumina-top-actions .lumina-circle{width:42px;height:42px}.lumina-pill{height:42px}}
