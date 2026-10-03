@@ -1,19 +1,23 @@
 'use strict';
 
-/* Sala Giochi 2.0 — navigazione a famiglie + SHIFTLINE
-   v2.5.0: grafica aderente ai mockup approvati + LUMINA giocabile. */
+/* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
+   v2.6.0: EVERYBODY IS RIGHT giocabile. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.5.0';
+  const NEXTGEN_VERSION = '2.6.1';
 
   GAME_NAMES.shiftline = 'SHIFTLINE';
   GAME_NAMES.lumina = 'LUMINA';
+  GAME_NAMES.everybody = 'EVERYBODY IS RIGHT';
   ICONS.shiftline = '⚡';
   ICONS.lumina = '✦';
+  ICONS.everybody = '◎';
   SESSION_GAMES.add('shiftline');
   SESSION_GAMES.add('lumina');
+  SESSION_GAMES.add('everybody');
   DEFAULT_GAME_PALETTES.shiftline = 'ocean';
   DEFAULT_GAME_PALETTES.lumina = 'violet';
+  DEFAULT_GAME_PALETTES.everybody = 'steel';
 
   GAME_HELP.shiftline = {
     title: 'SHIFTLINE',
@@ -29,6 +33,26 @@
       'Non esiste un limite di mosse: puoi sperimentare liberamente.',
       '“Annulla” inverte esattamente l’ultima mossa.',
       'Ogni schema viene creato partendo da una configurazione risolta e poi mescolato con mosse legali.'
+    ]
+  };
+
+
+
+  GAME_HELP.everybody = {
+    title: 'EVERYBODY IS RIGHT',
+    goal: 'Costruisci una realtà in cui tutte le testimonianze possano essere vere contemporaneamente.',
+    steps: [
+      'Leggi le testimonianze: nessuno dei personaggi mente.',
+      'Tocca un personaggio e poi un luogo per ricostruire dove poteva trovarsi all’ora indicata.',
+      'Seleziona le assunzioni che stai probabilmente dando per scontate senza che nessuno le abbia davvero affermate.',
+      'Per ogni testimonianza apparentemente impossibile scegli il collegamento nascosto che può renderla vera.',
+      'Premi “Verifica realtà”: il gioco controlla i vincoli, non una singola sequenza preconfezionata.'
+    ],
+    example: 'Se Anna dice “ho visto Marco” e Marco era in un’altra stanza, non significa che qualcuno menta: Anna potrebbe averlo visto attraverso una vetrata, uno specchio o un monitor.',
+    tips: [
+      'Le tessere “Fatti dell’ambiente” non sono decorative: possono rendere possibile una testimonianza che sembra contraddittoria.',
+      'Una ricostruzione diversa da quella generata dal gioco viene accettata se rispetta tutti i fatti e tutti i vincoli.',
+      'Nei livelli alti possono esserci due contraddizioni apparenti indipendenti.'
     ]
   };
 
@@ -51,6 +75,8 @@
   const legacyStartGame = startGame;
   const legacyRenderArchive = typeof renderArchive === 'function' ? renderArchive : null;
   const legacyRenderSettings = typeof renderSettings === 'function' ? renderSettings : null;
+  const legacyCurrentClueText = typeof currentClueText === 'function' ? currentClueText : null;
+  if(legacyCurrentClueText){currentClueText=function(){if(activeGame==='everybody'){const f=document.querySelector('.eir-feedback'),t=document.querySelector('.eir-testimonies');return (f?.innerText||t?.innerText||'EVERYBODY IS RIGHT').trim()}return legacyCurrentClueText()}}
 
   const CLASSIC_GAMES = [
     ['mixed','Partita Mista','Sei prove diverse in una sola sessione','mix'],
@@ -65,13 +91,13 @@
   const NEXTGEN_GAMES = [
     ['shiftline','SHIFTLINE','Collega. Trasforma. Risolvi.','Puzzle logico','live'],
     ['lumina','LUMINA','Crea. Esplora. Rilassati.','Passatempo creativo','live'],
-    ['everybody','EVERYBODY IS RIGHT','Tutti hanno ragione. Qual è la realtà?','Logica e deduzione','soon'],
+    ['everybody','EVERYBODY IS RIGHT','Tutti hanno ragione. Qual è la realtà?','Logica e deduzione','live'],
     ['another','ANHOTHER WORLD','Scopri le leggi di un mondo impossibile.','Esplorazione e logica','soon'],
     ['alibi','THE LAST ALIBI','Un giallo da risolvere.','Investigazione','soon']
   ];
 
   function clearSG2Mode(){
-    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail','sg2-lumina-play');
+    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail','sg2-lumina-play','sg2-everybody-play');
   }
   function setSG2Mode(...classes){
     clearSG2Mode();
@@ -104,7 +130,7 @@
     app.innerHTML=`<div class="sg2-shell sg2-home-screen">
       <section class="sg2-home-hero">
         <div class="sg2-home-copy">
-          <span class="sg2-eyebrow">SALA GIOCHI 2.0</span>
+          <span class="sg2-eyebrow">SALA GIOCHI <b>v${NEXTGEN_VERSION}</b></span>
           <h2>Sala giochi</h2>
           <p>Tanti giochi, un unico posto per divertirsi.</p>
           ${statsMini()}
@@ -135,9 +161,9 @@
       <header class="sg2-family-header light">
         <button class="sg2-back" onclick="renderHome()" aria-label="Indietro">←</button>
         <div><span class="sg2-eyebrow">SALA GIOCHI</span><h2>Giochi classici</h2><p>I tuoi giochi preferiti di sempre.</p></div>
-        <label class="sg2-desc-toggle">Descrizioni <input id="classicDescToggle" type="checkbox"><span></span></label>
+        <label class="sg2-desc-toggle">Descrizioni <input id="classicDescToggle" type="checkbox" checked><span></span></label>
       </header>
-      <div class="sg2-classic-grid">
+      <div class="sg2-classic-grid show-desc">
         ${CLASSIC_GAMES.map(([id,name,desc,art])=>`<button class="sg2-classic-card art-${art}" onclick="chooseDifficulty('${id}')"><span class="sg2-classic-icon">${ICONS[id]}</span><strong>${name}</strong><small>${desc}</small></button>`).join('')}
       </div>
       <button class="sg2-daily-strip" onclick="sg2OpenDaily()"><span>★</span><div><b>Sfida del giorno</b><small>Una prova diversa ogni giorno</small></div><i>›</i></button>
@@ -145,10 +171,11 @@
     </div>`;
     const toggle=document.getElementById('classicDescToggle');
     toggle.onchange=()=>document.querySelector('.sg2-classic-grid')?.classList.toggle('show-desc',toggle.checked);
+    document.querySelector('.sg2-classic-grid')?.classList.toggle('show-desc',toggle.checked);
   };
 
   function ngCard([id,name,payoff,category,status]){
-    const liveHandlers={shiftline:'renderShiftlineDetail()',lumina:'renderLuminaDetail()'};
+    const liveHandlers={shiftline:'renderShiftlineDetail()',lumina:'renderLuminaDetail()',everybody:'renderEverybodyDetail()'};
     const click=status==='live' ? (liveHandlers[id]||`showNextGenSoon('${name.replace(/'/g,"\\'")}')`) : `showNextGenSoon('${name.replace(/'/g,"\\'")}')`;
     return `<button class="sg2-ng-card ${id} ${status}" onclick="${click}">
       <span class="sg2-ng-visual" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
@@ -204,9 +231,26 @@
     </div>`;
   };
 
+
+  window.renderEverybodyDetail=function(){
+    setSG2Mode('sg2-family','sg2-nextgen','sg2-detail');
+    setHeader('EVERYBODY IS RIGHT','Logica e deduzione');
+    app.innerHTML=`<div class="sg2-shell sg2-detail-screen everybody-detail-screen">
+      <header class="sg2-detail-head"><button class="sg2-back" onclick="renderNextGenFamily()">←</button><span>NUOVA GENERAZIONE</span></header>
+      <section class="sg2-everybody-detail">
+        <div class="sg2-everybody-copy"><span class="sg2-eyebrow">LOGICA E DEDUZIONE</span><h2>EVERYBODY<br>IS RIGHT</h2><p class="tagline">Nessuno mente. Eppure sembra impossibile.</p><p>Ricostruisci luoghi, relazioni e punti di vista finché tutte le testimonianze diventano compatibili. Il gioco non ti chiede di indovinare una risposta: devi costruire una realtà che funzioni.</p>
+          <div class="sg2-everybody-features"><span><b>◉</b> Tutte le frasi sono vere</span><span><b>⌘</b> Ricostruzione libera</span><span><b>◇</b> Soluzioni alternative valide</span></div>
+          <h3>Scegli la complessità</h3><div class="sg2-levels everybody-levels">${LEVEL_ORDER.map(l=>`<button onclick="startGame('everybody','${l}')"><b>${LEVEL_NAMES[l]}</b><small>${({easy:'3 persone · 1 paradosso',medium:'4 persone · più vincoli',hard:'5 persone · 2 paradossi',extreme:'6 persone · realtà molto ambigua'})[l]}</small></button>`).join('')}</div>
+        </div>
+        <div class="sg2-everybody-preview" aria-label="Anteprima di Everybody is Right"><div class="eir-orbit"></div><span class="eir-face f1">A</span><span class="eir-face f2">M</span><span class="eir-face f3">S</span><span class="eir-face f4">P</span><i class="eir-link l1"></i><i class="eir-link l2"></i><i class="eir-link l3"></i><div class="eir-core">TUTTI<br><b>VERI</b></div></div>
+      </section>
+      ${bottomNav()}
+    </div>`;
+  };
+
   startGame = function startGameV25(game, level, opts = {}) {
     clearSG2Mode();
-    if (game !== 'shiftline' && game !== 'lumina') return legacyStartGame(game, level, opts);
+    if (game !== 'shiftline' && game !== 'lumina' && game !== 'everybody') return legacyStartGame(game, level, opts);
     activeSaved = false;
     activeGame = game;
     activeLevel = level;
@@ -219,7 +263,8 @@
     activeNoteKey = noteKeyFor(game, level);
     setHeader(GAME_NAMES[game], LEVEL_NAMES[level]);
     if(game==='shiftline') startShiftline(level);
-    else startLumina(level);
+    else if(game==='lumina') startLumina(level);
+    else startEverybody(level);
   };
 
   const DIRS = [
@@ -561,7 +606,7 @@
 
   // ---------- LUMINA ----------
   function startLumina(level){
-    setSG2Mode('sg2-lumina-play');
+    setSG2Mode('sg2-lumina-play','sg2-everybody-play');
     setHeader('LUMINA',LEVEL_NAMES[level]);
     const cfg={
       easy:{count:70,speed:.30},
@@ -635,6 +680,193 @@
     document.getElementById('luminaSound').onclick=async()=>{if(soundOn)await stopAmbientAudio();else await startAmbientAudio()};
     document.getElementById('luminaFinish').onclick=()=>{if(!running)return;cleanup();clearSG2Mode();const score=Math.max(1,bloomCount)*100;concludeSession('lumina',level,score,true,`Hai lasciato questo mondo con <b>${bloomCount}</b> fioriture luminose. Nessun punteggio da inseguire: puoi semplicemente entrare nel prossimo.`)};
     window.addEventListener('resize',resize,{passive:true});resize();ctx.fillStyle='#020816';ctx.fillRect(0,0,w,h);seed();for(let i=0;i<3;i++)addBloom(rnd(w*.78,w*.22),rnd(h*.72,h*.22),rnd(.9,.5),false);startTimer();loop();if(!localStorage.getItem('sala_giochi_lumina_guide_v1'))setTimeout(()=>setGuide(true),260);
+  }
+
+
+  // ---------- EVERYBODY IS RIGHT ----------
+  const EIR_NAMES=['Anna','Marco','Sara','Paolo','Elena','Davide','Giulia','Lorenzo','Marta','Andrea','Clara','Nicolò'];
+  const EIR_PLACES=[
+    ['salone','Salone','▤'],['studio','Studio','▣'],['cucina','Cucina','◫'],['serra','Serra','⌂'],['corridoio','Corridoio','═'],['terrazza','Terrazza','▱'],['biblioteca','Biblioteca','▥']
+  ];
+  const EIR_ASSUMPTIONS=[
+    ['visual_same','STESSO LUOGO','Per vedere qualcuno devo trovarmi nella sua stessa stanza.','◉'],
+    ['audio_same','VOCE = PRESENZA','Se sento una voce, quella persona deve essere lì.','◌'],
+    ['spoken_only','“DIRE” = PARLARE','Se qualcuno mi ha detto qualcosa, deve averlo fatto a voce.','⌁'],
+    ['one_view','PUNTO DI VISTA','Una scena può essere osservata solo direttamente.','◇'],
+    ['continuous','CONTINUITÀ','Ciò che osservo deve accadere nello stesso spazio e nello stesso momento.','∞'],
+    ['unique_path','UNICO PERCORSO','Per collegare due luoghi serve necessariamente un passaggio fisico.','↔']
+  ];
+  const EIR_BRIDGES={
+    visual:[
+      ['mirror','SPECCHIO','Uno specchio ad angolo rende visibile l’altra stanza.','◇'],
+      ['window','VETRATA','Una vetrata interna permette di vedere attraverso due ambienti.','▱'],
+      ['camera','MONITOR','Una telecamera in diretta mostra l’altro ambiente.','▣'],
+      ['reflection','RIFLESSO','Una superficie riflettente mostra ciò che è fuori campo.','◈']
+    ],
+    audio:[
+      ['intercom','INTERFONO','Le stanze sono collegate da un interfono aperto.','⌁'],
+      ['phone','TELEFONO','La voce arriva tramite una chiamata.','◌'],
+      ['recording','REGISTRAZIONE','La voce proviene da un messaggio registrato.','▶'],
+      ['speaker','ALTOPARLANTE','Un altoparlante ritrasmette la voce altrove.','◉']
+    ],
+    message:[
+      ['text','MESSAGGIO','L’informazione è arrivata per iscritto sul telefono.','▧'],
+      ['note','BIGLIETTO','La frase era stata lasciata su un biglietto.','□'],
+      ['gesture','GESTO','Il significato è stato comunicato senza parole.','⌘'],
+      ['recording','REGISTRAZIONE','Il messaggio era stato registrato prima.','▶']
+    ]
+  };
+
+  function eirShufflePick(arr,n){return shuffle(arr).slice(0,n)}
+  function eirAdjacency(placeCount){
+    const adj={};for(let i=0;i<placeCount;i++){adj[i]=new Set();if(i>0)adj[i].add(i-1);if(i<placeCount-1)adj[i].add(i+1)}
+    if(placeCount>=4){adj[0].add(2);adj[2].add(0)}
+    return adj;
+  }
+  function eirConstraintText(c,names,places,time){
+    const N=i=>names[i], P=i=>places[i][1];
+    if(c.type==='at')return `${N(c.a)}: «Alle ${time} ero in ${P(c.p)}.»`;
+    if(c.type==='notAt')return `${N(c.a)}: «Alle ${time} non ero in ${P(c.p)}.»`;
+    if(c.type==='different')return `${N(c.a)}: «Alle ${time} io e ${N(c.b)} non eravamo nello stesso ambiente.»`;
+    if(c.type==='same')return `${N(c.a)}: «Alle ${time} ero nello stesso ambiente di ${N(c.b)}.»`;
+    if(c.type==='adjacentPlace')return `${N(c.a)}: «Alle ${time} ero in un ambiente confinante con ${P(c.p)}.»`;
+    if(c.type==='adjacentPeople')return `${N(c.a)}: «Alle ${time} ero in una stanza confinante con quella di ${N(c.b)}.»`;
+    return '';
+  }
+  function eirSatisfies(assign,c,adj){
+    if(c.type==='at')return assign[c.a]===c.p;
+    if(c.type==='notAt')return assign[c.a]!==c.p;
+    if(c.type==='different')return assign[c.a]!==assign[c.b];
+    if(c.type==='same')return assign[c.a]===assign[c.b];
+    if(c.type==='adjacentPlace')return adj[assign[c.a]]?.has(c.p)||false;
+    if(c.type==='adjacentPeople')return adj[assign[c.a]]?.has(assign[c.b])||false;
+    return true;
+  }
+  function eirEnumerate(personCount,placeCount,constraints,adj,limit=60){
+    const out=[],a=Array(personCount).fill(0);
+    function go(i){if(out.length>=limit)return;if(i===personCount){if(constraints.every(c=>eirSatisfies(a,c,adj)))out.push([...a]);return}for(let p=0;p<placeCount;p++){a[i]=p;go(i+1);if(out.length>=limit)return}}
+    go(0);return out;
+  }
+  function makeEverybody(level){
+    const cfg={easy:{people:3,places:3,challenges:1,targetSolutions:2},medium:{people:4,places:4,challenges:1,targetSolutions:3},hard:{people:5,places:4,challenges:2,targetSolutions:4},extreme:{people:6,places:5,challenges:2,targetSolutions:5}}[level];
+    const names=eirShufflePick(EIR_NAMES,cfg.people);
+    const places=eirShufflePick(EIR_PLACES,cfg.places);
+    const time=`${20+Math.floor(activeRng()*2)}:${['00','10','15','20','30','40'][Math.floor(activeRng()*6)]}`;
+    const adj=eirAdjacency(cfg.places);
+    let hidden=[];
+    if(level==='easy'||level==='medium')hidden=shuffle([...Array(cfg.places).keys()]).slice(0,cfg.people);
+    else hidden=Array.from({length:cfg.people},(_,i)=>i<cfg.places?i:Math.floor(activeRng()*cfg.places));
+    hidden=shuffle(hidden);
+
+    const constraints=[];
+    const candidates=[];
+    for(let i=0;i<cfg.people;i++)candidates.push({type:'at',a:i,p:hidden[i]});
+    for(let i=0;i<cfg.people;i++){
+      let wrong=(hidden[i]+1+Math.floor(activeRng()*(cfg.places-1)))%cfg.places;
+      if(wrong===hidden[i])wrong=(wrong+1)%cfg.places;
+      candidates.push({type:'notAt',a:i,p:wrong});
+    }
+    for(let a=0;a<cfg.people;a++)for(let b=a+1;b<cfg.people;b++){
+      if(hidden[a]===hidden[b])candidates.push({type:'same',a,b});
+      else candidates.push({type:'different',a,b});
+      if(adj[hidden[a]]?.has(hidden[b]))candidates.push({type:'adjacentPeople',a,b});
+    }
+    for(let a=0;a<cfg.people;a++)for(let p=0;p<cfg.places;p++)if(adj[hidden[a]]?.has(p))candidates.push({type:'adjacentPlace',a,p});
+
+    let pool=shuffle(candidates),solutions=[];
+    const minBase={easy:2,medium:3,hard:4,extreme:5}[level];
+    for(const c of pool){
+      if(constraints.some(x=>JSON.stringify(x)===JSON.stringify(c)))continue;
+      constraints.push(c);
+      solutions=eirEnumerate(cfg.people,cfg.places,constraints,adj,80);
+      if(constraints.length>=minBase && solutions.length<=cfg.targetSolutions && solutions.length>0)break;
+    }
+    if(!solutions.length)solutions=[hidden];
+
+    const challengeTypes=level==='easy'?['visual']:level==='medium'?[activeRng()<.5?'visual':'audio']:shuffle(['visual','audio','message']).slice(0,cfg.challenges);
+    const challenges=[];
+    const occupiedPairs=[];
+    for(let k=0;k<cfg.challenges;k++){
+      const type=challengeTypes[k];
+      let observer=0,target=1;
+      for(let tries=0;tries<30;tries++){
+        observer=Math.floor(activeRng()*cfg.people);target=Math.floor(activeRng()*cfg.people);
+        if(observer!==target&&hidden[observer]!==hidden[target]&&!occupiedPairs.some(x=>x[0]===observer&&x[1]===target))break;
+      }
+      occupiedPairs.push([observer,target]);
+      const options=EIR_BRIDGES[type];
+      const bridge=options[Math.floor(activeRng()*options.length)];
+      let text='';
+      if(type==='visual')text=`${names[observer]}: «Alle ${time} ho visto ${names[target]} in ${places[hidden[target]][1]}.»`;
+      if(type==='audio')text=`${names[observer]}: «Alle ${time} ho sentito chiaramente la voce di ${names[target]}.»`;
+      if(type==='message')text=`${names[observer]}: «Alle ${time} ${names[target]} mi ha detto di non muovermi.»`;
+      const fact={
+        mirror:`Uno specchio orientabile in ${places[hidden[observer]][1]} riflette parte di ${places[hidden[target]][1]}.`,
+        window:`Tra ${places[hidden[observer]][1]} e ${places[hidden[target]][1]} c’è una vetrata interna.`,
+        camera:`In ${places[hidden[observer]][1]} è acceso un monitor collegato in diretta a ${places[hidden[target]][1]}.`,
+        reflection:`Una superficie lucida in ${places[hidden[observer]][1]} riflette l’ingresso di ${places[hidden[target]][1]}.`,
+        intercom:`L’interfono tra ${places[hidden[observer]][1]} e ${places[hidden[target]][1]} risulta aperto.`,
+        phone:`Il registro mostra una chiamata tra ${names[observer]} e ${names[target]} alle ${time}.`,
+        recording:`In ${places[hidden[observer]][1]} c’è un dispositivo che può riprodurre messaggi registrati.`,
+        speaker:`L’impianto audio di ${places[hidden[observer]][1]} può ricevere il segnale da ${places[hidden[target]][1]}.`,
+        text:`Sul telefono di ${names[observer]} risulta un messaggio di ${names[target]} alle ${time}.`,
+        note:`Sul tavolo di ${places[hidden[observer]][1]} c’è un biglietto scritto da ${names[target]}.`,
+        gesture:`Da ${places[hidden[observer]][1]} è possibile vedere i gesti fatti all’ingresso di ${places[hidden[target]][1]}.`
+      }[bridge[0]]||`Un dispositivo collega ${places[hidden[observer]][1]} e ${places[hidden[target]][1]}.`;
+      challenges.push({type,observer,target,bridge:bridge[0],text,fact});
+    }
+
+    const assumptionIds=[...new Set(challenges.map(c=>c.type==='visual'?'visual_same':c.type==='audio'?'audio_same':'spoken_only'))];
+    const decoys=shuffle(EIR_ASSUMPTIONS.filter(a=>!assumptionIds.includes(a[0]))).slice(0,level==='easy'?2:level==='medium'?3:4);
+    const assumptions=shuffle([...EIR_ASSUMPTIONS.filter(a=>assumptionIds.includes(a[0])),...decoys]);
+    const testimony=shuffle([...constraints.map(c=>eirConstraintText(c,names,places,time)),...challenges.map(c=>c.text)]);
+    return {cfg,names,places,time,adj,hidden,constraints,solutions,challenges,assumptionIds,assumptions,testimony};
+  }
+
+  function startEverybody(level){
+    setSG2Mode('sg2-everybody-play');
+    setHeader('EVERYBODY IS RIGHT',LEVEL_NAMES[level]);
+    const g=makeEverybody(level),session=sessionState('everybody',level);
+    const selectedAssumptions=new Set(),bridgeChoices={},assign=Array(g.cfg.people).fill(null);
+    let selectedPerson=0,checks=0,finished=false;
+    if(level==='easy'){
+      const c=g.constraints.find(x=>x.type==='at');
+      if(c)assign[c.a]=c.p;
+    }
+    app.innerHTML=gameShell('everybody',level,`
+      <div class="eir-rule"><span>REGOLA DEL CASO</span><b>Nessuno mente.</b><small>Costruisci una realtà in cui tutto possa essere vero.</small></div>
+      <div class="eir-sessionline"><span>Sessione ${session.session}/100</span><span>Ora chiave <b>${g.time}</b></span><span id="eirChecks">Verifiche 0</span></div>
+      <section class="eir-panel"><div class="eir-panel-head"><span>01</span><div><b>Testimonianze</b><small>Tutte sono vere, anche quando sembrano incompatibili.</small></div></div><div class="eir-testimonies">${g.testimony.map((t,i)=>`<article><i>${String(i+1).padStart(2,'0')}</i><p>${t}</p></article>`).join('')}</div></section>
+      <section class="eir-panel"><div class="eir-panel-head"><span>02</span><div><b>Fatti dell’ambiente</b><small>Osserva ciò che rende possibili collegamenti non ovvi.</small></div></div><div class="eir-facts">${g.challenges.map((c,i)=>`<div><span>${['◇','⌁','▧'][i%3]}</span><p>${c.fact}</p></div>`).join('')}</div></section>
+      <section class="eir-panel reality"><div class="eir-panel-head"><span>03</span><div><b>Ricostruisci la realtà</b><small>Tocca una persona, poi il luogo in cui pensi si trovasse alle ${g.time}.</small></div></div>
+        <div id="eirPeople" class="eir-people"></div>
+        <div id="eirMap" class="eir-map"></div>
+      </section>
+      <section class="eir-panel"><div class="eir-panel-head"><span>04</span><div><b>Le cose che stai dando per scontate</b><small>Seleziona solo le assunzioni che devi abbandonare.</small></div></div><div id="eirAssumptions" class="eir-assumptions">${g.assumptions.map(a=>`<button data-id="${a[0]}"><b>${a[3]}</b><span><strong>${a[1]}</strong><small>${a[2]}</small></span></button>`).join('')}</div></section>
+      <section class="eir-panel"><div class="eir-panel-head"><span>05</span><div><b>Collegamenti nascosti</b><small>Per ogni apparente contraddizione indica come può essere vera.</small></div></div><div class="eir-bridges">${g.challenges.map((c,i)=>`<div class="eir-challenge"><p><b>Paradosso ${i+1}</b> · ${c.text}</p><div>${EIR_BRIDGES[c.type].map(o=>`<button data-ch="${i}" data-bridge="${o[0]}"><span>${o[3]}</span><b>${o[1]}</b></button>`).join('')}</div></div>`).join('')}</div></section>
+      <div id="eirFeedback" class="eir-feedback">Quando la tua ricostruzione è pronta, verifica se tutte le frasi possono convivere.</div>
+      <div class="actions eir-actions"><button id="eirReset" class="secondary" type="button">⟳ Azzera tavolo</button><button id="eirVerify" class="primary" type="button">Verifica realtà</button></div>
+    `);
+    const people=document.getElementById('eirPeople'),map=document.getElementById('eirMap'),feedback=document.getElementById('eirFeedback');
+    function renderPeople(){people.innerHTML=g.names.map((n,i)=>`<button class="${selectedPerson===i?'selected':''} ${assign[i]!==null?'placed':''}" data-person="${i}"><span>${n[0]}</span><b>${n}</b><small>${assign[i]===null?'da collocare':g.places[assign[i]][1]}</small></button>`).join('');people.querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedPerson=+b.dataset.person;renderPeople();renderMap()})}
+    function renderMap(){map.style.setProperty('--eir-cols',g.cfg.places<=3?g.cfg.places:2);map.innerHTML=g.places.map((p,pi)=>{const here=g.names.map((n,i)=>assign[i]===pi?`<span>${n[0]}<small>${n}</small></span>`:'').join('');const adjacent=[...g.adj[pi]].map(j=>g.places[j][1]).join(' · ');return `<button class="eir-place ${assign[selectedPerson]===pi?'target':''}" data-place="${pi}"><i>${p[2]}</i><b>${p[1]}</b><small>confina con ${adjacent||'—'}</small><div>${here}</div></button>`}).join('');map.querySelectorAll('.eir-place').forEach(b=>b.onclick=()=>{assign[selectedPerson]=+b.dataset.place;renderPeople();renderMap()})}
+    renderPeople();renderMap();
+    document.querySelectorAll('#eirAssumptions button').forEach(b=>b.onclick=()=>{const id=b.dataset.id;selectedAssumptions.has(id)?selectedAssumptions.delete(id):selectedAssumptions.add(id);b.classList.toggle('selected',selectedAssumptions.has(id))});
+    document.querySelectorAll('.eir-challenge button').forEach(b=>b.onclick=()=>{const ch=+b.dataset.ch;bridgeChoices[ch]=b.dataset.bridge;b.closest('.eir-challenge').querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b))});
+    document.getElementById('eirReset').onclick=()=>{assign.fill(null);selectedAssumptions.clear();for(const k of Object.keys(bridgeChoices))delete bridgeChoices[k];checks=0;document.getElementById('eirChecks').textContent='Verifiche 0';document.querySelectorAll('#eirAssumptions button,.eir-challenge button').forEach(b=>b.classList.remove('selected'));feedback.className='eir-feedback';feedback.textContent='Tavolo azzerato. Ricostruisci la realtà da capo.';renderPeople();renderMap()};
+    document.getElementById('eirVerify').onclick=()=>{
+      if(finished)return;checks++;document.getElementById('eirChecks').textContent=`Verifiche ${checks}`;
+      const placed=assign.filter(x=>x!==null).length;
+      const locOk=placed===g.cfg.people&&g.constraints.every(c=>eirSatisfies(assign,c,g.adj))&&g.challenges.every(c=>assign[c.observer]===g.hidden[c.observer]&&assign[c.target]===g.hidden[c.target]);
+      const assOk=g.assumptionIds.length===selectedAssumptions.size&&g.assumptionIds.every(x=>selectedAssumptions.has(x));
+      const bridgeOk=g.challenges.every((c,i)=>bridgeChoices[i]===c.bridge);
+      if(locOk&&assOk&&bridgeOk){
+        finished=true;const generatedSame=assign.every((p,i)=>p===g.hidden[i]);const sec=Math.floor((Date.now()-activeStart)/1000);const score=Math.max(120,1900-checks*120-sec*2+(generatedSame?0:180));feedback.className='eir-feedback success';feedback.innerHTML=`<b>${generatedSame?'Realtà coerente.':'Soluzione alternativa valida.'}</b><span>Tutte le testimonianze possono essere vere contemporaneamente.</span><div>${g.challenges.map(c=>`<p>${c.fact}</p>`).join('')}</div>`;document.querySelector('.eir-reality-flash')?.remove();const flash=document.createElement('div');flash.className='eir-reality-flash';flash.textContent='EVERYBODY IS RIGHT';document.body.appendChild(flash);setTimeout(()=>flash.remove(),1100);setTimeout(()=>concludeSession('everybody',level,score,true,`${generatedSame?'Hai ricostruito una realtà coerente.':'Hai trovato una soluzione alternativa coerente.'} Verifiche: <b>${checks}</b>.`),950);return;
+      }
+      const parts=[];if(placed<g.cfg.people)parts.push(`${g.cfg.people-placed} persone ancora da collocare`);else if(!locOk)parts.push('la disposizione non soddisfa ancora tutte le testimonianze');if(!assOk)parts.push('le assunzioni selezionate non spiegano ancora tutti i paradossi');if(!bridgeOk)parts.push('almeno un collegamento nascosto non è compatibile con i fatti');feedback.className='eir-feedback bad';feedback.innerHTML=`<b>Questa realtà non regge ancora.</b><span>${parts.join(' · ')}</span>`;
+    };
+    startTimer();
+    if(!localStorage.getItem('sala_giochi_everybody_help_v1')){localStorage.setItem('sala_giochi_everybody_help_v1','1');setTimeout(()=>openHelp(),260)}
   }
 
   // Ridisegna la Home già caricata da app.js includendo la nuova sezione.

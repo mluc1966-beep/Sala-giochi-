@@ -1,6 +1,6 @@
-const CACHE='sala-giochi-v2.5.1';
+const CACHE='sala-giochi-v2.6.1';
 const ASSETS=[
-  './','./index.html','./styles.css','./nextgen.css','./app.js','./nextgen.js','./manifest.webmanifest','./icon.svg','./escape-room-bg.jpg',
+  './','./index.html','./styles.css','./nextgen.css?v=2.6.1','./app.js','./nextgen.js?v=2.6.1','./manifest.webmanifest','./icon.svg','./escape-room-bg.jpg',
   './assets/home-room.svg','./assets/classic-desk.svg','./assets/future-city.svg','./assets/ng-shiftline.svg','./assets/ng-lumina.svg','./assets/ng-everybody.svg','./assets/ng-another.svg','./assets/ng-alibi.svg'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
