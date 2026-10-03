@@ -4,7 +4,7 @@
    v2.8.0: L'ULTIMO ALIBI attivo; giallo fair-play con indizi, sospetti, timeline e accusa finale. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.8.0';
+  const NEXTGEN_VERSION = '2.8.1';
 
   GAME_NAMES.shiftline = 'SHIFTLINE';
   GAME_NAMES.lumina = 'LUMINA';
@@ -221,7 +221,7 @@
   };
 
   function ngCard([id,name,payoff,category,status]){
-    const liveHandlers={shiftline:'renderShiftlineDetail()',lumina:'renderLuminaDetail()',everybody:'renderEverybodyDetail()',another:'renderAnotherDetail()'};
+    const liveHandlers={shiftline:'renderShiftlineDetail()',lumina:'renderLuminaDetail()',everybody:'renderEverybodyDetail()',another:'renderAnotherDetail()',alibi:'renderAlibiDetail()'};
     const click=status==='live' ? (liveHandlers[id]||`showNextGenSoon('${name.replace(/'/g,"\\'")}')`) : `showNextGenSoon('${name.replace(/'/g,"\\'")}')`;
     return `<button class="sg2-ng-card ${id} ${status}" onclick="${click}">
       <span class="sg2-ng-visual" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
