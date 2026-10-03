@@ -1,17 +1,10 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
-   v2.6.2: EVERYBODY IS RIGHT ridisegnato mobile-first + versione sempre visibile. */
+   v2.6.3: versione visibile in Home; rimossa dai titoli interni. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.6.2';
-
-  // Mostra sempre la versione corrente anche dentro i giochi.
-  const sg2LegacySetHeader = setHeader;
-  setHeader = function(title, sub=''){
-    const clean=String(sub||'').replace(/\s*[·•-]\s*v?\d+(?:\.\d+){1,2}\s*$/i,'').trim();
-    sg2LegacySetHeader(title, `${clean}${clean?' · ':''}v${NEXTGEN_VERSION}`);
-  };
+  const NEXTGEN_VERSION = '2.6.3';
 
   GAME_NAMES.shiftline = 'SHIFTLINE';
   GAME_NAMES.lumina = 'LUMINA';

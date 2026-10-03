@@ -85,7 +85,7 @@ body.sg2-home,body.sg2-family{background:#f4efe6}
 .sg2-home-copy h2{font-size:clamp(3.1rem,7.8vw,6.1rem);text-shadow:0 4px 24px rgba(0,0,0,.25)}
 .sg2-home-copy h2:after{content:' 2.0';color:#49c8ff;font-size:.56em;font-weight:900;letter-spacing:-.04em}
 .sg2-home-copy p{font-size:clamp(1.05rem,2.2vw,1.45rem);font-weight:700;text-shadow:0 2px 12px rgba(0,0,0,.35)}
-.sg2-home-copy .sg2-eyebrow{display:none}
+.sg2-home-copy .sg2-eyebrow{display:inline-flex;align-items:center;gap:.35rem;padding:.36rem .62rem;border-radius:999px;background:rgba(8,14,26,.48);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(8px);font-size:.72rem;letter-spacing:.09em;font-weight:850;color:rgba(255,255,255,.94);opacity:1;box-shadow:0 6px 18px rgba(0,0,0,.14)}.sg2-home-copy .sg2-eyebrow b{color:#62d9ff;font-weight:900}
 .sg2-home-orbit{display:none}
 .sg2-mini-stats span{background:rgba(15,18,25,.36);border-color:rgba(255,255,255,.2)}
 .sg2-family-choice{max-width:1040px;margin:-42px auto 0;gap:18px}
