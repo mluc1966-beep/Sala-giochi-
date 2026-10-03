@@ -1,15 +1,19 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + SHIFTLINE
-   v2.4.0: Home a due mondi, pagine famiglia dedicate e dettaglio SHIFTLINE. */
+   v2.5.0: grafica aderente ai mockup approvati + LUMINA giocabile. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.4.0';
+  const NEXTGEN_VERSION = '2.5.0';
 
   GAME_NAMES.shiftline = 'SHIFTLINE';
+  GAME_NAMES.lumina = 'LUMINA';
   ICONS.shiftline = '⚡';
+  ICONS.lumina = '✦';
   SESSION_GAMES.add('shiftline');
+  SESSION_GAMES.add('lumina');
   DEFAULT_GAME_PALETTES.shiftline = 'ocean';
+  DEFAULT_GAME_PALETTES.lumina = 'violet';
 
   GAME_HELP.shiftline = {
     title: 'SHIFTLINE',
@@ -25,6 +29,22 @@
       'Non esiste un limite di mosse: puoi sperimentare liberamente.',
       '“Annulla” inverte esattamente l’ultima mossa.',
       'Ogni schema viene creato partendo da una configurazione risolta e poi mescolato con mosse legali.'
+    ]
+  };
+
+  GAME_HELP.lumina = {
+    title: 'LUMINA',
+    goal: 'Lascia che luce, particelle e correnti prendano forma attraverso i tuoi gesti.',
+    steps: [
+      'Tocca lo spazio per generare una nuova sorgente luminosa.',
+      'Trascina il dito per creare una corrente che attira e devia le particelle.',
+      'Usa i tre simboli in basso per cambiare il tipo di gesto: luce, fiore o vortice.',
+      'Non esiste una soluzione obbligatoria: puoi restare nel mondo quanto vuoi e passare a un nuovo mondo quando ti va.'
+    ],
+    tips: [
+      'Movimenti lenti creano strutture più morbide; gesti rapidi producono scie più energiche.',
+      'Quando molte particelle convergono nello stesso punto può comparire spontaneamente una fioritura luminosa.',
+      'Ogni sessione usa un seme diverso e sviluppa quindi un ecosistema visivo differente.'
     ]
   };
 
@@ -44,14 +64,14 @@
 
   const NEXTGEN_GAMES = [
     ['shiftline','SHIFTLINE','Collega. Trasforma. Risolvi.','Puzzle logico','live'],
-    ['lumina','LUMINA','Crea. Esplora. Rilassati.','Passatempo creativo','soon'],
+    ['lumina','LUMINA','Crea. Esplora. Rilassati.','Passatempo creativo','live'],
     ['everybody','EVERYBODY IS RIGHT','Tutti hanno ragione. Qual è la realtà?','Logica e deduzione','soon'],
     ['another','ANHOTHER WORLD','Scopri le leggi di un mondo impossibile.','Esplorazione e logica','soon'],
     ['alibi','THE LAST ALIBI','Un giallo da risolvere.','Investigazione','soon']
   ];
 
   function clearSG2Mode(){
-    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail');
+    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail','sg2-lumina-play');
   }
   function setSG2Mode(...classes){
     clearSG2Mode();
@@ -128,7 +148,8 @@
   };
 
   function ngCard([id,name,payoff,category,status]){
-    const click=status==='live' ? `renderShiftlineDetail()` : `showNextGenSoon('${name.replace(/'/g,"\\'")}')`;
+    const liveHandlers={shiftline:'renderShiftlineDetail()',lumina:'renderLuminaDetail()'};
+    const click=status==='live' ? (liveHandlers[id]||`showNextGenSoon('${name.replace(/'/g,"\\'")}')`) : `showNextGenSoon('${name.replace(/'/g,"\\'")}')`;
     return `<button class="sg2-ng-card ${id} ${status}" onclick="${click}">
       <span class="sg2-ng-visual" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
       <span class="sg2-ng-copy"><em>${category}</em><strong>${name}</strong><small>${payoff}</small></span>
@@ -166,9 +187,26 @@
     </div>`;
   };
 
-  startGame = function startGameV24(game, level, opts = {}) {
+
+  window.renderLuminaDetail=function(){
+    setSG2Mode('sg2-family','sg2-nextgen','sg2-detail');
+    setHeader('LUMINA','Passatempo creativo');
+    app.innerHTML=`<div class="sg2-shell sg2-detail-screen lumina-detail-screen">
+      <header class="sg2-detail-head"><button class="sg2-back" onclick="renderNextGenFamily()">←</button><span>NUOVA GENERAZIONE</span></header>
+      <section class="sg2-lumina-detail">
+        <div class="sg2-lumina-copy"><span class="sg2-eyebrow">PASSATEMPO CREATIVO</span><h2>LUMINA</h2><p class="tagline">Crea. Esplora. Rilassati.</p><p>Un mondo di luce che prende vita con i tuoi gesti. Nessun punteggio da inseguire: disegna correnti, genera vortici e osserva ciò che nasce.</p>
+          <div class="sg2-lumina-features"><span><b>✦</b> Interazione intuitiva</span><span><b>❀</b> Esperienza rilassante</span><span><b>◎</b> Mondi sempre diversi</span></div>
+          <h3>Scegli l'intensità del mondo</h3><div class="sg2-levels lumina-levels">${LEVEL_ORDER.map(l=>`<button onclick="startGame('lumina','${l}')"><b>${LEVEL_NAMES[l]}</b><small>${({easy:'Sereno e rarefatto',medium:'Fluido e luminoso',hard:'Ricco e dinamico',extreme:'Cosmico e intenso'})[l]}</small></button>`).join('')}</div>
+        </div>
+        <div class="sg2-lumina-preview" aria-label="Anteprima grafica di Lumina"><div class="lumina-orb o1"></div><div class="lumina-orb o2"></div><div class="lumina-orb o3"></div><div class="lumina-wave w1"></div><div class="lumina-wave w2"></div><div class="lumina-hand">☝</div></div>
+      </section>
+      ${bottomNav()}
+    </div>`;
+  };
+
+  startGame = function startGameV25(game, level, opts = {}) {
     clearSG2Mode();
-    if (game !== 'shiftline') return legacyStartGame(game, level, opts);
+    if (game !== 'shiftline' && game !== 'lumina') return legacyStartGame(game, level, opts);
     activeSaved = false;
     activeGame = game;
     activeLevel = level;
@@ -180,7 +218,8 @@
     } else activeRng = Math.random;
     activeNoteKey = noteKeyFor(game, level);
     setHeader(GAME_NAMES[game], LEVEL_NAMES[level]);
-    startShiftline(level);
+    if(game==='shiftline') startShiftline(level);
+    else startLumina(level);
   };
 
   const DIRS = [
@@ -517,6 +556,59 @@
 
     render();
     startTimer();
+  }
+
+
+  // ---------- LUMINA ----------
+  function startLumina(level){
+    setSG2Mode('sg2-lumina-play');
+    setHeader('LUMINA',LEVEL_NAMES[level]);
+    const cfg={
+      easy:{count:70,speed:.30},
+      medium:{count:105,speed:.40},
+      hard:{count:145,speed:.50},
+      extreme:{count:190,speed:.62}
+    }[level];
+    const session=sessionState('lumina',level);
+    app.innerHTML=`<div class="lumina-play-shell">
+      <canvas id="luminaCanvas" aria-label="Mondo interattivo Lumina"></canvas>
+      <div class="lumina-topbar">
+        <button id="luminaBack" class="lumina-circle" aria-label="Torna a Nuova generazione">←</button>
+        <div class="lumina-brand"><b>LUMINA</b><span>Sessione ${session.session}/100 · ${LEVEL_NAMES[level]}</span></div>
+        <div class="lumina-top-actions"><button id="luminaSound" class="lumina-circle" aria-label="Audio">♪</button><button id="luminaFinish" class="lumina-pill">Nuovo mondo</button></div>
+      </div>
+      <div class="lumina-discovery"><span id="luminaBloomCount">0</span><small>fioriture</small></div>
+      <div class="lumina-modebar" role="toolbar" aria-label="Gesti Lumina">
+        <button class="active" data-mode="light" aria-label="Luce">✦</button>
+        <button data-mode="bloom" aria-label="Fiore">❀</button>
+        <button data-mode="vortex" aria-label="Vortice">◎</button>
+      </div>
+      <div id="luminaHint" class="lumina-hint">Tocca o trascina nello spazio</div>
+    </div>`;
+    const canvas=document.getElementById('luminaCanvas'),ctx=canvas.getContext('2d',{alpha:false});
+    let w=0,h=0,dpr=1,particles=[],blooms=[],pointer=null,mode='light',running=true,bloomCount=0,frame=0,soundOn=false,audioCtx=null,audioNodes=[];
+    const hueBase={easy:196,medium:204,hard:218,extreme:232}[level];
+    const rnd=(a=1,b=0)=>b+(a-b)*activeRng();
+    function resize(){dpr=Math.min(2,window.devicePixelRatio||1);w=innerWidth;h=innerHeight;canvas.width=w*dpr;canvas.height=h*dpr;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
+    function spawnParticle(x=rnd(w),y=rnd(h),energy=.4){const a=rnd(Math.PI*2),sp=rnd(.7,.15)*cfg.speed;return{x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:rnd(3.2,1.1),life:rnd(1,.45),energy,hue:hueBase+rnd(55,-20),phase:rnd(Math.PI*2)}}
+    function seed(){particles=Array.from({length:cfg.count},()=>spawnParticle())}
+    function burst(x,y,n=12,power=1){for(let i=0;i<n;i++){const p=spawnParticle(x+rnd(28,-28),y+rnd(28,-28),power);const a=rnd(Math.PI*2),sp=rnd(2.2,.5)*power;p.vx+=Math.cos(a)*sp;p.vy+=Math.sin(a)*sp;particles.push(p)}while(particles.length>cfg.count*1.8)particles.shift()}
+    function addBloom(x,y,scale=1,countIt=true){blooms.push({x,y,r:8,max:rnd(115,62)*scale,life:1,hue:hueBase+rnd(70,-15)});if(countIt){bloomCount++;document.getElementById('luminaBloomCount').textContent=bloomCount}burst(x,y,18,1.2)}
+    function forceAt(p){let fx=Math.sin((p.y+frame*.45)*.008+p.phase)*.012,fy=Math.cos((p.x-frame*.35)*.007+p.phase)*.012;if(pointer){let dx=pointer.x-p.x,dy=pointer.y-p.y,dist=Math.hypot(dx,dy)+1;if(dist<220){let s=(1-dist/220);if(mode==='vortex'){fx+=(-dy/dist)*s*.19;fy+=(dx/dist)*s*.19}else if(mode==='bloom'){fx+=(dx/dist)*s*.08;fy+=(dy/dist)*s*.08}else{fx+=(dx/dist)*s*.12;fy+=(dy/dist)*s*.12}}}return[fx,fy]}
+    function update(){for(const p of particles){const[fx,fy]=forceAt(p);p.vx=(p.vx+fx)*.992;p.vy=(p.vy+fy)*.992;const lim=2.3*cfg.speed+.4,sp=Math.hypot(p.vx,p.vy);if(sp>lim){p.vx=p.vx/sp*lim;p.vy=p.vy/sp*lim}p.x+=p.vx;p.y+=p.vy;if(p.x<-20)p.x=w+20;if(p.x>w+20)p.x=-20;if(p.y<-20)p.y=h+20;if(p.y>h+20)p.y=-20;p.phase+=.009}blooms.forEach(b=>{b.r+=(b.max-b.r)*.035;b.life-=.0045});blooms=blooms.filter(b=>b.life>0)}
+    function draw(){ctx.fillStyle='rgba(2,8,22,.18)';ctx.fillRect(0,0,w,h);const bg=ctx.createRadialGradient(w*.5,h*.45,20,w*.5,h*.5,Math.max(w,h)*.7);bg.addColorStop(0,'rgba(15,58,118,.055)');bg.addColorStop(1,'rgba(2,7,18,.02)');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);ctx.globalCompositeOperation='lighter';for(const b of blooms){ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.strokeStyle=`hsla(${b.hue},95%,72%,${Math.max(0,b.life)*.34})`;ctx.lineWidth=2.2;ctx.stroke();ctx.beginPath();ctx.arc(b.x,b.y,b.r*.55,0,Math.PI*2);ctx.strokeStyle=`hsla(${b.hue+45},95%,76%,${Math.max(0,b.life)*.22})`;ctx.stroke()}for(const p of particles){const glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);glow.addColorStop(0,`hsla(${p.hue},100%,86%,${.72*p.life})`);glow.addColorStop(.28,`hsla(${p.hue},100%,65%,${.35*p.life})`);glow.addColorStop(1,`hsla(${p.hue},100%,50%,0)`);ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,p.r*5,0,Math.PI*2);ctx.fill();ctx.fillStyle=`hsla(${p.hue},100%,90%,${.9*p.life})`;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalCompositeOperation='source-over'}
+    function loop(){if(!running)return;frame++;update();draw();requestAnimationFrame(loop)}
+    function pos(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+    function down(e){e.preventDefault();const q=pos(e);pointer={...q,last:q,start:performance.now(),travel:0};burst(q.x,q.y,mode==='bloom'?18:10,mode==='vortex'?1.25:1);if(mode==='bloom')addBloom(q.x,q.y,.72);document.getElementById('luminaHint').classList.add('fade')}
+    function move(e){if(!pointer)return;e.preventDefault();const q=pos(e);pointer.travel+=Math.hypot(q.x-pointer.last.x,q.y-pointer.last.y);pointer.x=q.x;pointer.y=q.y;pointer.last=q;if(frame%3===0)burst(q.x,q.y,mode==='light'?2:1,.65)}
+    function up(){if(!pointer)return;const held=performance.now()-pointer.start;if((pointer.travel>140||held>650)&&activeRng()<.8)addBloom(pointer.x,pointer.y,mode==='vortex'?1.25:1);pointer=null}
+    canvas.addEventListener('pointerdown',down,{passive:false});canvas.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',up,{passive:true});
+    document.querySelectorAll('.lumina-modebar button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('.lumina-modebar button').forEach(x=>x.classList.toggle('active',x===b));if(mode==='vortex')addBloom(w*.5,h*.5,.95)});
+    function cleanup(){running=false;window.removeEventListener('pointerup',up);window.removeEventListener('resize',resize);if(audioCtx){try{audioNodes.forEach(n=>n.stop?.());audioCtx.close()}catch{}audioCtx=null;audioNodes=[]}}
+    document.getElementById('luminaBack').onclick=()=>{cleanup();renderNextGenFamily()};
+    document.getElementById('luminaSound').onclick=async e=>{soundOn=!soundOn;e.currentTarget.classList.toggle('active',soundOn);if(soundOn){const AC=window.AudioContext||window.webkitAudioContext;if(!AC){soundOn=false;e.currentTarget.classList.remove('active');return}audioCtx=new AC();const master=audioCtx.createGain();master.gain.value=.025;master.connect(audioCtx.destination);const lfo=audioCtx.createOscillator(),lfoGain=audioCtx.createGain();lfo.frequency.value=.07;lfoGain.gain.value=.012;lfo.connect(lfoGain);for(const f of [110,164.81]){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.045;lfoGain.connect(g.gain);o.connect(g);g.connect(master);o.start();audioNodes.push(o)}lfo.start();audioNodes.push(lfo)}else if(audioCtx){try{audioNodes.forEach(n=>n.stop?.());await audioCtx.close()}catch{}audioCtx=null;audioNodes=[]}};
+    document.getElementById('luminaFinish').onclick=()=>{if(!running)return;cleanup();clearSG2Mode();const score=Math.max(1,bloomCount)*100;concludeSession('lumina',level,score,true,`Hai lasciato questo mondo con <b>${bloomCount}</b> fioriture luminose. Nessun punteggio da inseguire: puoi semplicemente entrare nel prossimo.`)};
+    window.addEventListener('resize',resize,{passive:true});resize();ctx.fillStyle='#020816';ctx.fillRect(0,0,w,h);seed();for(let i=0;i<3;i++)addBloom(rnd(w*.78,w*.22),rnd(h*.72,h*.22),rnd(.9,.5),false);startTimer();loop();
   }
 
   // Ridisegna la Home già caricata da app.js includendo la nuova sezione.
