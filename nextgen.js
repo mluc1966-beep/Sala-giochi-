@@ -1,23 +1,27 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
-   v2.6.3: versione visibile in Home; rimossa dai titoli interni. */
+   v2.7.0: ANHOTHER WORLD attivo; motore di leggi, esperimenti, previsione e sfida creativa. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.6.3';
+  const NEXTGEN_VERSION = '2.7.0';
 
   GAME_NAMES.shiftline = 'SHIFTLINE';
   GAME_NAMES.lumina = 'LUMINA';
   GAME_NAMES.everybody = 'EVERYBODY IS RIGHT';
+  GAME_NAMES.another = 'ANHOTHER WORLD';
   ICONS.shiftline = '⚡';
   ICONS.lumina = '✦';
   ICONS.everybody = '◎';
+  ICONS.another = '◈';
   SESSION_GAMES.add('shiftline');
   SESSION_GAMES.add('lumina');
   SESSION_GAMES.add('everybody');
+  SESSION_GAMES.add('another');
   DEFAULT_GAME_PALETTES.shiftline = 'ocean';
   DEFAULT_GAME_PALETTES.lumina = 'violet';
   DEFAULT_GAME_PALETTES.everybody = 'steel';
+  DEFAULT_GAME_PALETTES.another = 'violet';
 
   GAME_HELP.shiftline = {
     title: 'SHIFTLINE',
@@ -36,6 +40,25 @@
     ]
   };
 
+
+
+  GAME_HELP.another = {
+    title: 'ANHOTHER WORLD',
+    goal: 'Scopri le leggi nascoste di un mondo che non obbedisce alle regole che conosci.',
+    steps: [
+      'Osserva gli eventi iniziali e confronta lo stato della stanza prima e dopo ogni sequenza.',
+      'Seleziona le leggi che pensi siano attive: alcune azioni producono effetti indiretti o ritardati.',
+      'Usa gli esperimenti per costruire una breve sequenza di azioni e vedere cosa accade partendo sempre dallo stesso stato.',
+      'Quando hai identificato tutte le leggi, prevedi lo stato finale di una situazione mai vista.',
+      'Nell’ultima fase usa le leggi scoperte per raggiungere uno stato-obiettivo con una sequenza scelta da te.'
+    ],
+    example: 'Muovi la sfera rossa e la lampada cambia stato. È una coincidenza? Ripeti l’esperimento modificando un solo elemento: il mondo risponderà sempre secondo le sue leggi.',
+    tips: [
+      'Gli esperimenti sono limitati: cambia una cosa alla volta quando vuoi isolare una causa.',
+      'Un effetto può essere immediato, condizionale oppure comparire dopo l’azione successiva.',
+      'La sfida finale non richiede la sequenza pensata dal gioco: qualsiasi sequenza che raggiunge davvero l’obiettivo viene accettata.'
+    ]
+  };
 
 
   GAME_HELP.everybody = {
@@ -76,7 +99,7 @@
   const legacyRenderArchive = typeof renderArchive === 'function' ? renderArchive : null;
   const legacyRenderSettings = typeof renderSettings === 'function' ? renderSettings : null;
   const legacyCurrentClueText = typeof currentClueText === 'function' ? currentClueText : null;
-  if(legacyCurrentClueText){currentClueText=function(){if(activeGame==='everybody'){const f=document.querySelector('.eir-feedback'),t=document.querySelector('.eir-testimonies');return (f?.innerText||t?.innerText||'EVERYBODY IS RIGHT').trim()}return legacyCurrentClueText()}}
+  if(legacyCurrentClueText){currentClueText=function(){if(activeGame==='everybody'){const f=document.querySelector('.eir-feedback'),t=document.querySelector('.eir-testimonies');return (f?.innerText||t?.innerText||'EVERYBODY IS RIGHT').trim()}if(activeGame==='another'){const f=document.querySelector('.aw-feedback'),o=document.querySelector('.aw-observations');return (f?.innerText||o?.innerText||'ANHOTHER WORLD').trim()}return legacyCurrentClueText()}}
 
   const CLASSIC_GAMES = [
     ['mixed','Partita Mista','Sei prove diverse in una sola sessione','mix'],
@@ -92,12 +115,12 @@
     ['shiftline','SHIFTLINE','Collega. Trasforma. Risolvi.','Puzzle logico','live'],
     ['lumina','LUMINA','Crea. Esplora. Rilassati.','Passatempo creativo','live'],
     ['everybody','EVERYBODY IS RIGHT','Tutti hanno ragione. Qual è la realtà?','Logica e deduzione','live'],
-    ['another','ANHOTHER WORLD','Scopri le leggi di un mondo impossibile.','Esplorazione e logica','soon'],
+    ['another','ANHOTHER WORLD','Scopri le leggi di un mondo impossibile.','Esplorazione e logica','live'],
     ['alibi','THE LAST ALIBI','Un giallo da risolvere.','Investigazione','soon']
   ];
 
   function clearSG2Mode(){
-    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail','sg2-lumina-play','sg2-everybody-play');
+    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail','sg2-lumina-play','sg2-everybody-play','sg2-another-play');
   }
   function setSG2Mode(...classes){
     clearSG2Mode();
@@ -175,7 +198,7 @@
   };
 
   function ngCard([id,name,payoff,category,status]){
-    const liveHandlers={shiftline:'renderShiftlineDetail()',lumina:'renderLuminaDetail()',everybody:'renderEverybodyDetail()'};
+    const liveHandlers={shiftline:'renderShiftlineDetail()',lumina:'renderLuminaDetail()',everybody:'renderEverybodyDetail()',another:'renderAnotherDetail()'};
     const click=status==='live' ? (liveHandlers[id]||`showNextGenSoon('${name.replace(/'/g,"\\'")}')`) : `showNextGenSoon('${name.replace(/'/g,"\\'")}')`;
     return `<button class="sg2-ng-card ${id} ${status}" onclick="${click}">
       <span class="sg2-ng-visual" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
@@ -248,9 +271,26 @@
     </div>`;
   };
 
+
+  window.renderAnotherDetail=function(){
+    setSG2Mode('sg2-family','sg2-nextgen','sg2-detail');
+    setHeader('ANHOTHER WORLD','Esplorazione e logica');
+    app.innerHTML=`<div class="sg2-shell sg2-detail-screen another-detail-screen">
+      <header class="sg2-detail-head"><button class="sg2-back" onclick="renderNextGenFamily()">←</button><span>NUOVA GENERAZIONE</span></header>
+      <section class="sg2-another-detail">
+        <div class="sg2-another-copy"><span class="sg2-eyebrow">ESPLORAZIONE E LOGICA</span><h2>ANHOTHER<br>WORLD</h2><p class="tagline">Le regole sono cambiate. Scopri come.</p><p>Entra in una stanza apparentemente normale e osserva ciò che non dovrebbe accadere. Formula ipotesi, sperimenta e usa le leggi scoperte per piegare il mondo a tuo favore.</p>
+          <div class="sg2-another-features"><span><b>◉</b> Leggi nascoste</span><span><b>⌁</b> Esperimenti liberi</span><span><b>◇</b> Previsione e creatività</span></div>
+          <h3>Scegli la complessità</h3><div class="sg2-levels another-levels">${LEVEL_ORDER.map(l=>`<button onclick="startGame('another','${l}')"><b>${LEVEL_NAMES[l]}</b><small>${({easy:'2 leggi · 7 esperimenti',medium:'3 leggi · 6 esperimenti',hard:'4 leggi · 5 esperimenti',extreme:'5 leggi · 4 esperimenti'})[l]}</small></button>`).join('')}</div>
+        </div>
+        <div class="sg2-another-preview" aria-label="Anteprima di Another World"><div class="aw-portal-ring r1"></div><div class="aw-portal-ring r2"></div><div class="aw-preview-room"><span class="aw-red"></span><span class="aw-blue"></span><span class="aw-lamp">✦</span><span class="aw-door"></span></div><div class="aw-preview-glitch">REALITY<br><b>≠</b><br>RULES</div></div>
+      </section>
+      ${bottomNav()}
+    </div>`;
+  };
+
   startGame = function startGameV25(game, level, opts = {}) {
     clearSG2Mode();
-    if (game !== 'shiftline' && game !== 'lumina' && game !== 'everybody') return legacyStartGame(game, level, opts);
+    if (game !== 'shiftline' && game !== 'lumina' && game !== 'everybody' && game !== 'another') return legacyStartGame(game, level, opts);
     activeSaved = false;
     activeGame = game;
     activeLevel = level;
@@ -264,7 +304,8 @@
     setHeader(GAME_NAMES[game], LEVEL_NAMES[level]);
     if(game==='shiftline') startShiftline(level);
     else if(game==='lumina') startLumina(level);
-    else startEverybody(level);
+    else if(game==='everybody') startEverybody(level);
+    else startAnother(level);
   };
 
   const DIRS = [
@@ -606,7 +647,7 @@
 
   // ---------- LUMINA ----------
   function startLumina(level){
-    setSG2Mode('sg2-lumina-play','sg2-everybody-play');
+    setSG2Mode('sg2-lumina-play','sg2-everybody-play','sg2-another-play');
     setHeader('LUMINA',LEVEL_NAMES[level]);
     const cfg={
       easy:{count:70,speed:.30},
@@ -824,7 +865,7 @@
   }
 
   function startEverybody(level){
-    setSG2Mode('sg2-everybody-play');
+    setSG2Mode('sg2-everybody-play','sg2-another-play');
     setHeader('EVERYBODY IS RIGHT',LEVEL_NAMES[level]);
     const g=makeEverybody(level),session=sessionState('everybody',level);
     const selectedAssumptions=new Set(),bridgeChoices={},assign=Array(g.cfg.people).fill(null);
@@ -902,6 +943,170 @@
     };
     startTimer();
     if(!localStorage.getItem('sala_giochi_everybody_help_v2')){localStorage.setItem('sala_giochi_everybody_help_v2','1');setTimeout(()=>openHelp(),260)}
+  }
+
+
+  // ---------- ANHOTHER WORLD ----------
+  const AW_ACTIONS={
+    orb:{icon:'●',name:'Muovi sfera rossa'},
+    cube:{icon:'◆',name:'Muovi cubo blu'},
+    lamp:{icon:'✦',name:'Interruttore lampada'},
+    key:{icon:'⌁',name:'Premi la chiave'},
+    leave:{icon:'⇢',name:'Esci dalla stanza'},
+    enter:{icon:'⇠',name:'Entra nella stanza'}
+  };
+  const AW_RULES=[
+    {id:'scarlet',symbol:'●→✦',name:'Risonanza scarlatta',desc:'Muovere la sfera rossa cambia anche lo stato della lampada.'},
+    {id:'azure',symbol:'◆→▯',name:'Porta azzurra',desc:'Muovere il cubo blu cambia anche lo stato della porta.'},
+    {id:'shadow',symbol:'⇢→●',name:'Deriva invisibile',desc:'Quando l’osservatore esce, la sfera rossa cambia posizione.'},
+    {id:'echo',symbol:'●…◆',name:'Eco ritardata',desc:'Dopo aver mosso la sfera, il cubo cambia posizione al termine dell’azione successiva.'},
+    {id:'lightkey',symbol:'✦+⌁',name:'Chiave illuminata',desc:'La chiave cambia la porta soltanto quando la lampada è accesa.'},
+    {id:'home',symbol:'⇠→◆',name:'Posizione di ritorno',desc:'Quando l’osservatore entra, il cubo torna sempre a sinistra.'},
+    {id:'mirror',symbol:'◆↔●',name:'Legame speculare',desc:'Muovere il cubo sposta anche la sfera rossa.'},
+    {id:'darkdoor',symbol:'✦↓▯',name:'Memoria del buio',desc:'Spegnere la lampada chiude sempre la porta.'}
+  ];
+  const AW_CONFIG={
+    easy:{rules:2,candidates:5,observations:4,experiments:7,predictLen:2,breakLen:3},
+    medium:{rules:3,candidates:6,observations:5,experiments:6,predictLen:3,breakLen:4},
+    hard:{rules:4,candidates:8,observations:6,experiments:5,predictLen:4,breakLen:5},
+    extreme:{rules:5,candidates:8,observations:7,experiments:4,predictLen:5,breakLen:6}
+  };
+  const AW_OBSERVATION_SEQUENCES=[
+    ['orb'],['cube'],['lamp','key'],['leave'],['cube','enter'],['cube','lamp'],['orb','lamp'],['orb','key'],['lamp','cube'],['leave','enter'],['cube','cube'],['lamp','key','lamp']
+  ];
+  function awInitial(){return{orb:0,cube:0,lamp:false,door:false,inside:true,echo:false}}
+  function awClone(s){return{orb:s.orb,cube:s.cube,lamp:s.lamp,door:s.door,inside:s.inside,echo:s.echo}}
+  function awApply(state,action,ruleSet){
+    const beforeEcho=state.echo;
+    state.echo=false;
+    if(action==='orb'){state.orb=1-state.orb;if(ruleSet.has('scarlet'))state.lamp=!state.lamp;if(ruleSet.has('echo'))state.echo=true}
+    else if(action==='cube'){state.cube=1-state.cube;if(ruleSet.has('azure'))state.door=!state.door;if(ruleSet.has('mirror'))state.orb=1-state.orb}
+    else if(action==='lamp'){state.lamp=!state.lamp;if(ruleSet.has('darkdoor')&&!state.lamp)state.door=false}
+    else if(action==='key'){if(ruleSet.has('lightkey')&&state.lamp)state.door=!state.door}
+    else if(action==='leave'){state.inside=false;if(ruleSet.has('shadow'))state.orb=1-state.orb}
+    else if(action==='enter'){state.inside=true;if(ruleSet.has('home'))state.cube=0}
+    if(beforeEcho)state.cube=1-state.cube;
+    return state;
+  }
+  function awRun(sequence,ruleIds,start=awInitial()){
+    const rules=ruleIds instanceof Set?ruleIds:new Set(ruleIds),state=awClone(start),steps=[];
+    sequence.forEach(a=>{const before=awClone(state);awApply(state,a,rules);steps.push({action:a,before,after:awClone(state)})});
+    return{state,steps};
+  }
+  function awStateKey(s){return`${s.orb}${s.cube}${s.lamp?1:0}${s.door?1:0}${s.inside?1:0}`}
+  function awStateDiff(a,b){return['orb','cube','lamp','door','inside'].filter(k=>a[k]!==b[k]).length}
+  function awStateText(s){return`Sfera ${s.orb?'destra':'sinistra'} · Cubo ${s.cube?'destra':'sinistra'} · Lampada ${s.lamp?'accesa':'spenta'} · Porta ${s.door?'aperta':'chiusa'} · Osservatore ${s.inside?'dentro':'fuori'}`}
+  function awActionText(seq){return seq.map(a=>`${AW_ACTIONS[a].icon} ${AW_ACTIONS[a].name}`).join(' → ')}
+  function awPickRules(cfg){return shuffle(AW_RULES).slice(0,cfg.rules).map(r=>r.id)}
+  function awCandidateRules(active,cfg){
+    const chosen=AW_RULES.filter(r=>active.includes(r.id)),rest=shuffle(AW_RULES.filter(r=>!active.includes(r.id))).slice(0,Math.max(0,cfg.candidates-chosen.length));
+    return shuffle([...chosen,...rest]);
+  }
+  function awInformativeObservation(seq,active){const out=awRun(seq,active);return awStateDiff(awInitial(),out.state)>0||seq.includes('key')}
+  function awGenerate(level){
+    const cfg=AW_CONFIG[level],active=awPickRules(cfg),candidates=awCandidateRules(active,cfg);
+    const pool=shuffle(AW_OBSERVATION_SEQUENCES).filter(s=>awInformativeObservation(s,active));
+    const observations=pool.slice(0,cfg.observations).map((sequence,i)=>({id:i+1,sequence,result:awRun(sequence,active).state}));
+    let predictSequence=null,predictState=null;
+    for(let tries=0;tries<80;tries++){
+      const seq=Array.from({length:cfg.predictLen},()=>shuffle(Object.keys(AW_ACTIONS))[0]),res=awRun(seq,active).state;
+      if(awStateDiff(awInitial(),res)>=2){predictSequence=seq;predictState=res;break}
+    }
+    if(!predictSequence){predictSequence=['orb','cube'];predictState=awRun(predictSequence,active).state}
+    let breakSequence=null,target=null;
+    for(let tries=0;tries<120;tries++){
+      const len=Math.max(2,Math.min(cfg.breakLen,2+Math.floor(activeRng()*cfg.breakLen)));
+      const seq=Array.from({length:len},()=>shuffle(Object.keys(AW_ACTIONS))[0]),res=awRun(seq,active).state;
+      if(awStateDiff(awInitial(),res)>=3){breakSequence=seq;target=res;break}
+    }
+    if(!breakSequence){breakSequence=['orb','lamp','cube'];target=awRun(breakSequence,active).state}
+    return{cfg,active,candidates,observations,predictSequence,predictState,breakSequence,target};
+  }
+  function awScene(state,compact=false){return`<div class="aw-scene ${compact?'compact':''}">
+    <div class="aw-room-glow ${state.lamp?'on':''}"></div>
+    <div class="aw-lamp-object ${state.lamp?'on':''}"><span>✦</span><small>${state.lamp?'ACCESA':'SPENTA'}</small></div>
+    <div class="aw-door-object ${state.door?'open':''}"><i></i><small>${state.door?'APERTA':'CHIUSA'}</small></div>
+    <div class="aw-track"><span class="aw-orb ${state.orb?'right':''}">●</span><span class="aw-cube ${state.cube?'right':''}">◆</span></div>
+    <div class="aw-observer ${state.inside?'inside':'outside'}"><span>◉</span><small>${state.inside?'DENTRO':'FUORI'}</small></div>
+  </div>`}
+  function awStateControls(prefix,state){return`<div class="aw-state-controls" id="${prefix}">
+    <button data-k="orb"><span>● Sfera</span><b>${state.orb?'Destra':'Sinistra'}</b></button>
+    <button data-k="cube"><span>◆ Cubo</span><b>${state.cube?'Destra':'Sinistra'}</b></button>
+    <button data-k="lamp"><span>✦ Lampada</span><b>${state.lamp?'Accesa':'Spenta'}</b></button>
+    <button data-k="door"><span>▯ Porta</span><b>${state.door?'Aperta':'Chiusa'}</b></button>
+    <button data-k="inside"><span>◉ Osservatore</span><b>${state.inside?'Dentro':'Fuori'}</b></button>
+  </div>`}
+  function startAnother(level){
+    setSG2Mode('sg2-another-play');
+    setHeader('ANHOTHER WORLD',LEVEL_NAMES[level]);
+    const g=awGenerate(level),session=sessionState('another',level),selectedRules=new Set(),experimentSeq=[],breakSeq=[];
+    let experimentsLeft=g.cfg.experiments,phase='observe',hypothesisSolved=false,predictionSolved=false,checks=0,finished=false;
+    const predicted=awInitial();
+    app.innerHTML=gameShell('another',level,`
+      <div class="aw-world-head"><div><span>MONDO ${String(session.session).padStart(2,'0')}</span><b>Le leggi non sono quelle che conosci.</b></div><div class="aw-exp-count"><small>Esperimenti</small><strong id="awExpLeft">${experimentsLeft}</strong></div></div>
+      <nav class="aw-tabs">
+        <button class="active" data-awtab="observe"><span>1</span><b>Osserva</b></button>
+        <button data-awtab="experiment"><span>2</span><b>Esperimenta</b></button>
+        <button data-awtab="predict" disabled><span>3</span><b>Prevedi</b></button>
+        <button data-awtab="break" disabled><span>4</span><b>Rompi il mondo</b></button>
+      </nav>
+      <section class="aw-panel active" data-awpanel="observe">
+        <div class="aw-intro"><b>Stato di partenza</b><p>Ogni osservazione e ogni esperimento comincia esattamente da qui.</p>${awScene(awInitial(),true)}</div>
+        <div class="aw-section-title"><span>01</span><div><b>Eventi osservati</b><small>Confronta la sequenza con lo stato finale.</small></div></div>
+        <div class="aw-observations">${g.observations.map(o=>`<article><div class="aw-ob-num">${String(o.id).padStart(2,'0')}</div><div class="aw-ob-body"><p class="aw-sequence">${awActionText(o.sequence)}</p>${awScene(o.result,true)}<small>${awStateText(o.result)}</small></div></article>`).join('')}</div>
+        <div class="aw-section-title"><span>02</span><div><b>Le leggi possibili</b><small>Seleziona soltanto quelle che pensi governino questo mondo.</small></div></div>
+        <div id="awRules" class="aw-rule-grid">${g.candidates.map(r=>`<button data-rule="${r.id}"><span>${r.symbol}</span><div><b>${r.name}</b><small>${r.desc}</small></div></button>`).join('')}</div>
+        <div id="awHypFeedback" class="aw-feedback"><b>Formula un’ipotesi</b><span>Puoi usare gli esperimenti prima di verificare.</span></div>
+        <div class="actions"><button class="secondary" data-awgo="experiment">Vai agli esperimenti</button><button id="awCheckRules" class="primary">Verifica leggi</button></div>
+      </section>
+      <section class="aw-panel" data-awpanel="experiment">
+        <div class="aw-section-title"><span>03</span><div><b>Laboratorio</b><small>Costruisci una sequenza di massimo 3 azioni. Ogni prova riparte dallo stato iniziale.</small></div></div>
+        ${awScene(awInitial(),false)}
+        <div class="aw-action-palette">${Object.entries(AW_ACTIONS).map(([id,a])=>`<button data-awaction="${id}"><span>${a.icon}</span><small>${a.name}</small></button>`).join('')}</div>
+        <div id="awExperimentSeq" class="aw-seq-builder"><em>Nessuna azione selezionata</em></div>
+        <div class="actions"><button id="awExperimentClear" class="secondary">Azzera</button><button id="awExperimentRun" class="primary">Esegui esperimento</button></div>
+        <div id="awExperimentResult" class="aw-feedback"><b>Risultato</b><span>Il mondo mostrerà qui come ha reagito.</span></div>
+      </section>
+      <section class="aw-panel" data-awpanel="predict">
+        <div class="aw-section-title"><span>04</span><div><b>Prevedi</b><small>Ora niente esperimenti: applica mentalmente le leggi scoperte.</small></div></div>
+        <div class="aw-predict-seq">${awActionText(g.predictSequence)}</div>
+        <p class="aw-predict-copy">Imposta come pensi sarà il mondo dopo questa sequenza.</p>
+        <div id="awPredictionScene">${awScene(predicted,false)}</div>
+        ${awStateControls('awPredictionControls',predicted)}
+        <div id="awPredictFeedback" class="aw-feedback"><b>La tua previsione</b><span>Modifica lo stato e poi verifica.</span></div>
+        <div class="actions"><button id="awPredictVerify" class="primary wide">Verifica previsione</button></div>
+      </section>
+      <section class="aw-panel" data-awpanel="break">
+        <div class="aw-section-title"><span>05</span><div><b>Rompi il mondo</b><small>Non cercare la sequenza dell’autore: inventane una che raggiunga davvero questo stato.</small></div></div>
+        <div class="aw-target"><b>OBIETTIVO</b>${awScene(g.target,false)}<p>${awStateText(g.target)}</p></div>
+        <div class="aw-action-palette">${Object.entries(AW_ACTIONS).map(([id,a])=>`<button data-awbreak="${id}"><span>${a.icon}</span><small>${a.name}</small></button>`).join('')}</div>
+        <div id="awBreakSeq" class="aw-seq-builder"><em>Costruisci una sequenza · massimo ${g.cfg.breakLen} azioni</em></div>
+        <div class="actions"><button id="awBreakClear" class="secondary">Azzera</button><button id="awBreakRun" class="primary">Esegui sequenza</button></div>
+        <div id="awBreakFeedback" class="aw-feedback"><b>Il mondo aspetta.</b><span>Usa le sue leggi contro di lui.</span></div>
+      </section>
+    `);
+    const tabs=[...document.querySelectorAll('.aw-tabs button')],panels=[...document.querySelectorAll('.aw-panel')];
+    function setPhase(name){phase=name;tabs.forEach(b=>b.classList.toggle('active',b.dataset.awtab===name));panels.forEach(p=>p.classList.toggle('active',p.dataset.awpanel===name));document.querySelector('.game-another')?.scrollIntoView({behavior:'smooth',block:'start'})}
+    tabs.forEach(b=>b.onclick=()=>{if(!b.disabled)setPhase(b.dataset.awtab)});document.querySelectorAll('[data-awgo]').forEach(b=>b.onclick=()=>setPhase(b.dataset.awgo));
+    document.querySelectorAll('#awRules button').forEach(b=>b.onclick=()=>{const id=b.dataset.rule;selectedRules.has(id)?selectedRules.delete(id):selectedRules.add(id);b.classList.toggle('selected',selectedRules.has(id))});
+    const hypFb=document.getElementById('awHypFeedback');
+    document.getElementById('awCheckRules').onclick=()=>{checks++;const exact=selectedRules.size===g.active.length&&g.active.every(id=>selectedRules.has(id));if(exact){hypothesisSolved=true;hypFb.className='aw-feedback success';hypFb.innerHTML='<b>Le leggi combaciano.</b><span>Hai costruito un modello che spiega tutte le osservazioni. Ora usalo per prevedere il mondo.</span>';const p=tabs.find(x=>x.dataset.awtab==='predict');p.disabled=false;setTimeout(()=>setPhase('predict'),550)}else{const tooMany=[...selectedRules].filter(id=>!g.active.includes(id)).length,missing=g.active.filter(id=>!selectedRules.has(id)).length;hypFb.className='aw-feedback bad';hypFb.innerHTML=`<b>Il modello non regge ancora.</b><span>${missing?`${missing} legge${missing>1?'i':''} necessaria${missing>1?'e':''} manca${missing>1?'no':''}. `:''}${tooMany?`${tooMany} ipotesi selezionata${tooMany>1?'e':''} produce effetti che non appartengono a questo mondo.`:''}</span>`}};
+    const exBuild=document.getElementById('awExperimentSeq'),exResult=document.getElementById('awExperimentResult');
+    function renderEx(){exBuild.innerHTML=experimentSeq.length?experimentSeq.map((a,i)=>`<button data-rm="${i}"><span>${AW_ACTIONS[a].icon}</span><small>${AW_ACTIONS[a].name}</small></button>`).join('<i>→</i>'):'<em>Nessuna azione selezionata</em>';exBuild.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{experimentSeq.splice(+b.dataset.rm,1);renderEx()})}
+    document.querySelectorAll('[data-awaction]').forEach(b=>b.onclick=()=>{if(experimentSeq.length>=3)return toast('Massimo 3 azioni per esperimento');experimentSeq.push(b.dataset.awaction);renderEx()});
+    document.getElementById('awExperimentClear').onclick=()=>{experimentSeq.length=0;renderEx()};
+    document.getElementById('awExperimentRun').onclick=()=>{if(!experimentSeq.length)return toast('Scegli almeno un’azione');if(experimentsLeft<=0)return toast('Esperimenti terminati');experimentsLeft--;document.getElementById('awExpLeft').textContent=experimentsLeft;const out=awRun(experimentSeq,g.active);exResult.className='aw-feedback result';exResult.innerHTML=`<b>${awActionText(experimentSeq)}</b><div>${awScene(out.state,true)}</div><span>${awStateText(out.state)}</span>`};
+    const predScene=document.getElementById('awPredictionScene'),predControls=document.getElementById('awPredictionControls'),predFb=document.getElementById('awPredictFeedback');
+    function renderPrediction(){predScene.innerHTML=awScene(predicted,false);predControls.querySelectorAll('button').forEach(b=>{const k=b.dataset.k;b.querySelector('b').textContent=k==='orb'?(predicted[k]?'Destra':'Sinistra'):k==='cube'?(predicted[k]?'Destra':'Sinistra'):k==='lamp'?(predicted[k]?'Accesa':'Spenta'):k==='door'?(predicted[k]?'Aperta':'Chiusa'):(predicted[k]?'Dentro':'Fuori')})}
+    predControls.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(k==='orb'||k==='cube')predicted[k]=1-predicted[k];else predicted[k]=!predicted[k];renderPrediction()});
+    document.getElementById('awPredictVerify').onclick=()=>{if(!hypothesisSolved)return;const diff=awStateDiff(predicted,g.predictState);if(diff===0){predictionSolved=true;predFb.className='aw-feedback success';predFb.innerHTML='<b>Previsione esatta.</b><span>Non stai più osservando questo mondo: hai iniziato a capirlo.</span>';const b=tabs.find(x=>x.dataset.awtab==='break');b.disabled=false;setTimeout(()=>setPhase('break'),650)}else{predFb.className='aw-feedback bad';predFb.innerHTML=`<b>La previsione diverge.</b><span>${diff} elemento${diff>1?'i':''} dello stato finale non coincide${diff>1?'ono':''}. Ricalcola gli effetti nell’ordine.</span>`}};
+    const breakBuild=document.getElementById('awBreakSeq'),breakFb=document.getElementById('awBreakFeedback');
+    function renderBreak(){breakBuild.innerHTML=breakSeq.length?breakSeq.map((a,i)=>`<button data-brm="${i}"><span>${AW_ACTIONS[a].icon}</span><small>${AW_ACTIONS[a].name}</small></button>`).join('<i>→</i>'):`<em>Costruisci una sequenza · massimo ${g.cfg.breakLen} azioni</em>`;breakBuild.querySelectorAll('[data-brm]').forEach(b=>b.onclick=()=>{breakSeq.splice(+b.dataset.brm,1);renderBreak()})}
+    document.querySelectorAll('[data-awbreak]').forEach(b=>b.onclick=()=>{if(breakSeq.length>=g.cfg.breakLen)return toast(`Massimo ${g.cfg.breakLen} azioni`);breakSeq.push(b.dataset.awbreak);renderBreak()});
+    document.getElementById('awBreakClear').onclick=()=>{breakSeq.length=0;renderBreak()};
+    document.getElementById('awBreakRun').onclick=()=>{if(finished||!predictionSolved)return;if(!breakSeq.length)return toast('Costruisci una sequenza');const out=awRun(breakSeq,g.active),ok=awStateKey(out.state)===awStateKey(g.target);if(ok){finished=true;const sec=Math.floor((Date.now()-activeStart)/1000),score=Math.max(180,2400-checks*90-(g.cfg.experiments-experimentsLeft)*45-sec*2+Math.max(0,g.cfg.breakLen-breakSeq.length)*60);breakFb.className='aw-feedback success';breakFb.innerHTML=`<b>Hai piegato il mondo.</b><span>La tua sequenza raggiunge davvero lo stato-obiettivo in ${breakSeq.length} mosse.</span>`;setTimeout(()=>concludeSession('another',level,score,true,`Leggi scoperte, previsione corretta e mondo modificato in <b>${breakSeq.length}</b> mosse.`),800)}else{const diff=awStateDiff(out.state,g.target);breakFb.className='aw-feedback bad';breakFb.innerHTML=`<b>Il mondo resiste.</b><div>${awScene(out.state,true)}</div><span>${diff} elemento${diff>1?'i':''} non coincide${diff>1?'ono':''} ancora con l’obiettivo.</span>`}};
+    renderEx();renderPrediction();renderBreak();startTimer();
+    if(!localStorage.getItem('sala_giochi_another_help_v1')){localStorage.setItem('sala_giochi_another_help_v1','1');setTimeout(()=>openHelp(),260)}
   }
 
   // Ridisegna la Home già caricata da app.js includendo la nuova sezione.
