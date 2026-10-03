@@ -1,13 +1,11 @@
 'use strict';
 
-/* Sala Giochi 2.0 — modulo Nuova Generazione
-   Prima release: SHIFTLINE. Gli altri concept sono esposti in Home come roadmap,
-   senza alterare il codice dei giochi classici. */
+/* Sala Giochi 2.0 — navigazione a famiglie + SHIFTLINE
+   v2.4.0: Home a due mondi, pagine famiglia dedicate e dettaglio SHIFTLINE. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.3.0';
+  const NEXTGEN_VERSION = '2.4.0';
 
-  // Estende i registri esistenti senza cambiare app.js.
   GAME_NAMES.shiftline = 'SHIFTLINE';
   ICONS.shiftline = '⚡';
   SESSION_GAMES.add('shiftline');
@@ -26,88 +24,160 @@
     tips: [
       'Non esiste un limite di mosse: puoi sperimentare liberamente.',
       '“Annulla” inverte esattamente l’ultima mossa.',
-      'Il puzzle viene creato partendo da una configurazione risolta e poi mescolato con mosse legali: quindi ogni schema generato è risolvibile.'
+      'Ogni schema viene creato partendo da una configurazione risolta e poi mescolato con mosse legali.'
     ]
   };
 
-  const legacyRenderHome = renderHome;
   const legacyStartGame = startGame;
+  const legacyRenderArchive = typeof renderArchive === 'function' ? renderArchive : null;
+  const legacyRenderSettings = typeof renderSettings === 'function' ? renderSettings : null;
 
-  window.showNextGenSoon = (name) => {
-    toast(`${name}: concept approvato · sviluppo previsto nelle prossime fasi`);
+  const CLASSIC_GAMES = [
+    ['mixed','Partita Mista','Sei prove diverse in una sola sessione','mix'],
+    ['sudoku','Sudoku','Completa la griglia 9×9','sudoku'],
+    ['wordsearch','Cerca-parole','Trova tutte le parole nascoste','word'],
+    ['anagram','Anagrammi','Ricomponi le lettere','anagram'],
+    ['quiz','Quiz','Cultura generale e curiosità','quiz'],
+    ['logic','Logica','Sequenze, deduzioni e codici','logic'],
+    ['escape','Escape Room','Esplora, collega gli indizi, esci','escape']
+  ];
+
+  const NEXTGEN_GAMES = [
+    ['shiftline','SHIFTLINE','Collega. Trasforma. Risolvi.','Puzzle logico','live'],
+    ['lumina','LUMINA','Crea. Esplora. Rilassati.','Passatempo creativo','soon'],
+    ['everybody','EVERYBODY IS RIGHT','Tutti hanno ragione. Qual è la realtà?','Logica e deduzione','soon'],
+    ['another','ANHOTHER WORLD','Scopri le leggi di un mondo impossibile.','Esplorazione e logica','soon'],
+    ['alibi','THE LAST ALIBI','Un giallo da risolvere.','Investigazione','soon']
+  ];
+
+  function clearSG2Mode(){
+    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail');
+  }
+  function setSG2Mode(...classes){
+    clearSG2Mode();
+    document.body.classList.add(...classes);
+    stopTimer();
+  }
+  function bottomNav(active='home'){
+    return `<nav class="sg2-bottom" aria-label="Navigazione principale">
+      <button class="${active==='home'?'active':''}" onclick="renderHome()"><span>⌂</span><small>Home</small></button>
+      <button class="${active==='archive'?'active':''}" onclick="sg2OpenArchive()"><span>▥</span><small>I miei giochi</small></button>
+      <button onclick="sg2OpenSettings()"><span>⚙</span><small>Impostazioni</small></button>
+    </nav>`;
+  }
+  function statsMini(){
+    const total=store.history.length;
+    const wins=store.history.filter(x=>x.success).length;
+    return `<div class="sg2-mini-stats"><span><b>${total}</b> partite</span><span><b>${wins}</b> completate</span></div>`;
+  }
+
+  window.sg2OpenArchive=()=>{clearSG2Mode();legacyRenderArchive?.()};
+  window.sg2OpenSettings=()=>{clearSG2Mode();legacyRenderSettings?.()};
+  window.sg2OpenDaily=()=>{clearSG2Mode();renderDaily()};
+  window.showNextGenSoon=(name)=>toast(`${name}: in sviluppo`);
+
+  renderHome = function renderHomeV24(){
+    activeSaved=false;
+    setSG2Mode('sg2-home');
+    setHeader('Sala Giochi','Sala giochi 2.0');
+    const total=store.history.length;
+    app.innerHTML=`<div class="sg2-shell sg2-home-screen">
+      <section class="sg2-home-hero">
+        <div class="sg2-home-copy">
+          <span class="sg2-eyebrow">SALA GIOCHI 2.0</span>
+          <h2>Sala giochi</h2>
+          <p>Tanti giochi, un unico posto per divertirsi.</p>
+          ${statsMini()}
+        </div>
+        <div class="sg2-home-orbit" aria-hidden="true"><i></i><i></i><i></i></div>
+      </section>
+      <section class="sg2-family-choice" aria-label="Famiglie di giochi">
+        <button class="sg2-family-card classic" onclick="renderClassicFamily()">
+          <div class="sg2-family-art classic-art" aria-hidden="true"><span class="tile t1">S</span><span class="tile t2">A</span><span class="mini-grid"></span><span class="ball b1"></span><span class="ball b2"></span></div>
+          <div class="sg2-family-copy"><span class="sg2-family-kicker">SEMPRE CON TE</span><h3>Giochi classici</h3><p>I tuoi giochi preferiti di sempre.</p></div>
+          <span class="sg2-round-arrow">›</span>
+        </button>
+        <button class="sg2-family-card next" onclick="renderNextGenFamily()">
+          <div class="sg2-family-art future-art" aria-hidden="true"><span class="future-ring r1"></span><span class="future-ring r2"></span><span class="future-core"></span><span class="future-line l1"></span><span class="future-line l2"></span></div>
+          <div class="sg2-family-copy"><span class="sg2-family-kicker">NUOVA GENERAZIONE</span><h3>Nuova generazione</h3><p>Nuovi mondi da esplorare.</p></div>
+          <span class="sg2-round-arrow">›</span>
+        </button>
+      </section>
+      <p class="sg2-home-foot">${total?`I progressi restano salvati su questo dispositivo.`:'Scegli una famiglia e inizia a giocare.'}</p>
+      ${bottomNav('home')}
+    </div>`;
   };
 
-  function roadmapCard(name, icon, desc, key) {
-    return `<button class="game-card nextgen-card nextgen-soon" onclick="showNextGenSoon('${key}')">
-      <span class="game-icon">${icon}</span>
-      <strong>${name}</strong>
-      <small>${desc}</small>
-      <span class="nextgen-tag">IN SVILUPPO</span>
+  window.renderClassicFamily=function(){
+    setSG2Mode('sg2-family','sg2-classic');
+    setHeader('Giochi classici','I tuoi giochi preferiti di sempre');
+    app.innerHTML=`<div class="sg2-shell sg2-classic-screen">
+      <header class="sg2-family-header light">
+        <button class="sg2-back" onclick="renderHome()" aria-label="Indietro">←</button>
+        <div><span class="sg2-eyebrow">SALA GIOCHI</span><h2>Giochi classici</h2><p>I tuoi giochi preferiti di sempre.</p></div>
+        <label class="sg2-desc-toggle">Descrizioni <input id="classicDescToggle" type="checkbox"><span></span></label>
+      </header>
+      <div class="sg2-classic-grid">
+        ${CLASSIC_GAMES.map(([id,name,desc,art])=>`<button class="sg2-classic-card art-${art}" onclick="chooseDifficulty('${id}')"><span class="sg2-classic-icon">${ICONS[id]}</span><strong>${name}</strong><small>${desc}</small></button>`).join('')}
+      </div>
+      <button class="sg2-daily-strip" onclick="sg2OpenDaily()"><span>★</span><div><b>Sfida del giorno</b><small>Una prova diversa ogni giorno</small></div><i>›</i></button>
+      ${bottomNav()}
+    </div>`;
+    const toggle=document.getElementById('classicDescToggle');
+    toggle.onchange=()=>document.querySelector('.sg2-classic-grid')?.classList.toggle('show-desc',toggle.checked);
+  };
+
+  function ngCard([id,name,payoff,category,status]){
+    const click=status==='live' ? `renderShiftlineDetail()` : `showNextGenSoon('${name.replace(/'/g,"\\'")}')`;
+    return `<button class="sg2-ng-card ${id} ${status}" onclick="${click}">
+      <span class="sg2-ng-visual" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="sg2-ng-copy"><em>${category}</em><strong>${name}</strong><small>${payoff}</small></span>
+      <span class="sg2-ng-state">${status==='live'?'GIOCA':'IN SVILUPPO'}</span><span class="sg2-round-arrow">›</span>
     </button>`;
   }
 
-  renderHome = function renderHomeV23() {
-    legacyRenderHome();
-    setHeader('Sala Giochi', `Un solo giocatore · archivio locale · v${NEXTGEN_VERSION}`);
-
-    const theme = app.querySelector('.home-theme');
-    if (!theme) return;
-
-    const hero = theme.querySelector('.hero');
-    if (hero && !hero.querySelector('.nextgen-hero-chip')) {
-      const chip = document.createElement('div');
-      chip.className = 'nextgen-hero-chip';
-      chip.innerHTML = '<span>✦</span> SALA GIOCHI 2.0';
-      hero.querySelector('.hero-note')?.before(chip);
-    }
-
-    const classicTitle = theme.querySelector('.section-title');
-    if (!classicTitle) return;
-    const classicHeading = classicTitle.querySelector('h3');
-    if (classicHeading) classicHeading.textContent = 'Giochi classici';
-
-    const ngTitle = document.createElement('div');
-    ngTitle.className = 'section-title nextgen-title';
-    ngTitle.innerHTML = '<div><span class="section-kicker">NUOVA GENERAZIONE</span><h3>Nuovi mondi di gioco</h3></div><small>Meccaniche originali · sviluppo modulare</small>';
-
-    const ngGrid = document.createElement('div');
-    ngGrid.className = 'grid nextgen-grid';
-    ngGrid.innerHTML = `
-      <button class="game-card nextgen-card game-shiftline nextgen-live" onclick="chooseDifficulty('shiftline')">
-        <span class="game-icon">⚡</span>
-        <strong>SHIFTLINE</strong>
-        <small>Ruota la rete: ogni mossa cambia anche le altre tessere</small>
-        <span class="nextgen-tag live">GIOCABILE</span>
-        <span class="mini-arrow">›</span>
-      </button>
-      ${roadmapCard('ANHOTHER WORLD','◉','Scopri le leggi nascoste di una realtà impossibile','ANHOTHER WORLD')}
-      ${roadmapCard('EVERYBODY IS RIGHT','◎','Costruisci una realtà in cui tutte le testimonianze siano vere','EVERYBODY IS RIGHT')}
-      ${roadmapCard('LUMINA','✧','Un ecosistema grafico rilassante che reagisce ai tuoi gesti','LUMINA')}
-      ${roadmapCard('THE LAST ALIBI','♟','Un giallo fair-play con alibi, timeline e ricostruzione finale','THE LAST ALIBI')}
-    `;
-
-    classicTitle.before(ngTitle, ngGrid);
+  window.renderNextGenFamily=function(){
+    setSG2Mode('sg2-family','sg2-nextgen');
+    setHeader('Nuova generazione','Esperienze uniche, mondi da scoprire');
+    app.innerHTML=`<div class="sg2-shell sg2-nextgen-screen">
+      <header class="sg2-family-header dark">
+        <button class="sg2-back" onclick="renderHome()" aria-label="Indietro">←</button>
+        <div><span class="sg2-eyebrow">SALA GIOCHI 2.0</span><h2>Nuova generazione</h2><p>Esperienze uniche, mondi da scoprire.</p></div>
+        <div class="sg2-tech-mark" aria-hidden="true"><i></i><i></i><i></i></div>
+      </header>
+      <div class="sg2-ng-grid">${NEXTGEN_GAMES.map(ngCard).join('')}</div>
+      ${bottomNav()}
+    </div>`;
   };
 
-  startGame = function startGameV23(game, level, opts = {}) {
-    if (game !== 'shiftline') return legacyStartGame(game, level, opts);
+  window.renderShiftlineDetail=function(){
+    setSG2Mode('sg2-family','sg2-nextgen','sg2-detail');
+    setHeader('SHIFTLINE','Puzzle logico');
+    app.innerHTML=`<div class="sg2-shell sg2-detail-screen">
+      <header class="sg2-detail-head"><button class="sg2-back" onclick="renderNextGenFamily()">←</button><span>NUOVA GENERAZIONE</span></header>
+      <section class="sg2-shift-detail">
+        <div class="sg2-shift-copy"><span class="sg2-eyebrow">PUZZLE LOGICO</span><h2>SHIFTLINE</h2><p class="tagline">Collega. Trasforma. Risolvi.</p><p>Ruota le tessere e ricostruisci la rete: ogni mossa può modificare anche altri nodi. Osserva le reazioni e porta energia all’intero circuito.</p>
+          <div class="sg2-feature-row"><span>◎ Reazioni concatenate</span><span>↶ Annulla mosse</span><span>∞ 100 sessioni per livello</span></div>
+          <h3>Scegli il livello</h3><div class="sg2-levels">${LEVEL_ORDER.map(l=>`<button onclick="startGame('shiftline','${l}')"><b>${LEVEL_NAMES[l]}</b><small>${difficultyMeta('shiftline',l)}</small></button>`).join('')}</div>
+        </div>
+        <div class="sg2-shift-preview" aria-label="Anteprima grafica di Shiftline"><span class="pnode a"></span><span class="pnode b"></span><span class="pnode c"></span><span class="pnode d"></span><span class="pline h1"></span><span class="pline v1"></span><span class="pline h2"></span><span class="pline v2"></span><span class="pulse"></span></div>
+      </section>
+      ${bottomNav()}
+    </div>`;
+  };
 
+  startGame = function startGameV24(game, level, opts = {}) {
+    clearSG2Mode();
+    if (game !== 'shiftline') return legacyStartGame(game, level, opts);
     activeSaved = false;
     activeGame = game;
     activeLevel = level;
     activeSessionTracked = opts.trackSession !== false && SESSION_GAMES.has(game);
-
     if (activeSessionTracked) {
       const s = sessionState(game, level);
-      if (s.cycleComplete) {
-        renderCycleComplete(game, level);
-        return;
-      }
+      if (s.cycleComplete) { renderCycleComplete(game, level); return; }
       activeRng = makeRng(sessionSeed(game, level));
-    } else {
-      activeRng = Math.random;
-    }
-
+    } else activeRng = Math.random;
     activeNoteKey = noteKeyFor(game, level);
     setHeader(GAME_NAMES[game], LEVEL_NAMES[level]);
     startShiftline(level);

@@ -1,20 +1,20 @@
-SALA GIOCHI 2.0 — AGGIORNAMENTO v2.3.0
+SALA GIOCHI 2.0 — AGGIORNAMENTO v2.4.0
 
-File da aggiungere:
+File da aggiungere/sostituire:
 - nextgen.js
 - nextgen.css
-
-File da sostituire:
 - index.html
 - sw.js
 
 Gli altri file del repository NON vanno modificati.
 
 Novità:
-- nuova sezione "Nuova generazione" nella Home;
-- SHIFTLINE giocabile con Facile, Medio, Difficile e Difficilissimo;
-- SHIFTLINE integrato nelle sessioni 1–100, nel taccuino, nelle statistiche e nel salvataggio locale;
-- puzzle generati in modo deterministico per sessione e sempre risolvibili perché ottenuti da una rete risolta tramite sole mosse legali;
-- pulsanti Annulla e Ripristina schema;
-- ANHOTHER WORLD, EVERYBODY IS RIGHT, LUMINA e THE LAST ALIBI visibili come roadmap ma non ancora attivi;
-- cache PWA aggiornata a v2.3.0.
+- Home completamente ridisegnata: mostra solo le due famiglie 'Giochi classici' e 'Nuova generazione';
+- pagina Giochi classici con griglia pulita e descrizioni attivabili;
+- pagina Nuova generazione futuristica con cinque concept;
+- SHIFTLINE apre una pagina dettaglio dedicata e resta pienamente giocabile;
+- navigazione inferiore comune: Home, I miei giochi, Impostazioni;
+- nessun cambiamento alla logica dei giochi classici;
+- cache PWA aggiornata a v2.4.0.
+
+Nota: LUMINA, EVERYBODY IS RIGHT, ANHOTHER WORLD e THE LAST ALIBI sono visibili come giochi in sviluppo, ma non ancora attivi.
