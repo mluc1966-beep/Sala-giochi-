@@ -1,27 +1,31 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
-   v2.7.0: ANHOTHER WORLD attivo; motore di leggi, esperimenti, previsione e sfida creativa. */
+   v2.8.0: L'ULTIMO ALIBI attivo; giallo fair-play con indizi, sospetti, timeline e accusa finale. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.7.0';
+  const NEXTGEN_VERSION = '2.8.0';
 
   GAME_NAMES.shiftline = 'SHIFTLINE';
   GAME_NAMES.lumina = 'LUMINA';
   GAME_NAMES.everybody = 'EVERYBODY IS RIGHT';
   GAME_NAMES.another = 'ANHOTHER WORLD';
+  GAME_NAMES.alibi = "L'ULTIMO ALIBI";
   ICONS.shiftline = '⚡';
   ICONS.lumina = '✦';
   ICONS.everybody = '◎';
   ICONS.another = '◈';
+  ICONS.alibi = '⌛';
   SESSION_GAMES.add('shiftline');
   SESSION_GAMES.add('lumina');
   SESSION_GAMES.add('everybody');
   SESSION_GAMES.add('another');
+  SESSION_GAMES.add('alibi');
   DEFAULT_GAME_PALETTES.shiftline = 'ocean';
   DEFAULT_GAME_PALETTES.lumina = 'violet';
   DEFAULT_GAME_PALETTES.everybody = 'steel';
   DEFAULT_GAME_PALETTES.another = 'violet';
+  DEFAULT_GAME_PALETTES.alibi = 'gold';
 
   GAME_HELP.shiftline = {
     title: 'SHIFTLINE',
@@ -40,6 +44,25 @@
     ]
   };
 
+
+
+  GAME_HELP.alibi = {
+    title: "L'ULTIMO ALIBI",
+    goal: 'Risolvi un vero giallo fair-play: identifica il colpevole e dimostra come, quando e perché ha commesso il delitto.',
+    steps: [
+      'Esamina la scena del crimine: ogni oggetto può essere innocuo, fuorviante oppure decisivo.',
+      'Interroga tutti i sospetti. Per ciascuno trovi rapporto con la vittima, alibi e una osservazione sul caso.',
+      'Ricostruisci la timeline mettendo gli eventi nell’ordine corretto. Il gioco ti dice soltanto quanti eventi sono fuori posto.',
+      'Quando hai esaminato tutti gli elementi essenziali compare “Hai tutto ciò che serve”: da quel momento non verranno introdotti nuovi indizi decisivi.',
+      'Formula l’accusa indicando colpevole, movente, metodo, trucco dell’alibi e prova decisiva.'
+    ],
+    example: 'Un testimone sente la voce della vittima alle 22:20. Sembra un alibi perfetto per chi era altrove a quell’ora; ma se quella voce provenisse da una registrazione, l’ora del delitto cambierebbe completamente.',
+    tips: [
+      'Il movente da solo non basta: più persone possono avere ottime ragioni per desiderare la morte della vittima.',
+      'Gli alibi più forti sono spesso quelli da controllare con maggiore attenzione.',
+      'Nei livelli alti l’accusa viene respinta senza dirti quale parte è sbagliata: usa il Taccuino per costruire una teoria completa.'
+    ]
+  };
 
 
   GAME_HELP.another = {
@@ -99,7 +122,7 @@
   const legacyRenderArchive = typeof renderArchive === 'function' ? renderArchive : null;
   const legacyRenderSettings = typeof renderSettings === 'function' ? renderSettings : null;
   const legacyCurrentClueText = typeof currentClueText === 'function' ? currentClueText : null;
-  if(legacyCurrentClueText){currentClueText=function(){if(activeGame==='everybody'){const f=document.querySelector('.eir-feedback'),t=document.querySelector('.eir-testimonies');return (f?.innerText||t?.innerText||'EVERYBODY IS RIGHT').trim()}if(activeGame==='another'){const f=document.querySelector('.aw-feedback'),o=document.querySelector('.aw-observations');return (f?.innerText||o?.innerText||'ANHOTHER WORLD').trim()}return legacyCurrentClueText()}}
+  if(legacyCurrentClueText){currentClueText=function(){if(activeGame==='everybody'){const f=document.querySelector('.eir-feedback'),t=document.querySelector('.eir-testimonies');return (f?.innerText||t?.innerText||'EVERYBODY IS RIGHT').trim()}if(activeGame==='another'){const f=document.querySelector('.aw-feedback'),o=document.querySelector('.aw-observations');return (f?.innerText||o?.innerText||'ANHOTHER WORLD').trim()}if(activeGame==='alibi'){const f=document.querySelector('.la-feedback'),e=document.querySelector('.la-evidence-grid'),w=document.querySelector('.la-suspects');return (f?.innerText||e?.innerText||w?.innerText||"L'ULTIMO ALIBI").trim()}return legacyCurrentClueText()}}
 
   const CLASSIC_GAMES = [
     ['mixed','Partita Mista','Sei prove diverse in una sola sessione','mix'],
@@ -116,11 +139,11 @@
     ['lumina','LUMINA','Crea. Esplora. Rilassati.','Passatempo creativo','live'],
     ['everybody','EVERYBODY IS RIGHT','Tutti hanno ragione. Qual è la realtà?','Logica e deduzione','live'],
     ['another','ANHOTHER WORLD','Scopri le leggi di un mondo impossibile.','Esplorazione e logica','live'],
-    ['alibi','THE LAST ALIBI','Un giallo da risolvere.','Investigazione','soon']
+    ['alibi',"L'ULTIMO ALIBI",'Un giallo da risolvere.','Investigazione','live']
   ];
 
   function clearSG2Mode(){
-    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail','sg2-lumina-play','sg2-everybody-play','sg2-another-play');
+    document.body.classList.remove('sg2-home','sg2-family','sg2-nextgen','sg2-classic','sg2-detail','sg2-lumina-play','sg2-everybody-play','sg2-another-play','sg2-alibi-play');
   }
   function setSG2Mode(...classes){
     clearSG2Mode();
@@ -288,9 +311,26 @@
     </div>`;
   };
 
+
+  window.renderAlibiDetail=function(){
+    setSG2Mode('sg2-family','sg2-nextgen','sg2-detail');
+    setHeader("L'ULTIMO ALIBI",'Investigazione');
+    app.innerHTML=`<div class="sg2-shell sg2-detail-screen alibi-detail-screen">
+      <header class="sg2-detail-head"><button class="sg2-back" onclick="renderNextGenFamily()">←</button><span>NUOVA GENERAZIONE</span></header>
+      <section class="sg2-alibi-detail">
+        <div class="sg2-alibi-copy"><span class="sg2-eyebrow">GIALLO INVESTIGATIVO</span><h2>L'ULTIMO<br>ALIBI</h2><p class="tagline">Tutti hanno un motivo. Uno solo ha costruito l’alibi perfetto.</p><p>Esamina la scena, interroga i sospetti e ricostruisci gli eventi. Quando avrai visto tutto ciò che serve, il caso ti sfiderà apertamente: da quel momento la soluzione è nelle tue mani.</p>
+          <div class="sg2-alibi-features"><span><b>⌕</b> Indizi fair-play</span><span><b>◷</b> Timeline da ricostruire</span><span><b>⚖</b> Accusa completa</span></div>
+          <h3>Scegli la complessità</h3><div class="sg2-levels alibi-levels">${LEVEL_ORDER.map(l=>`<button onclick="startGame('alibi','${l}')"><b>${LEVEL_NAMES[l]}</b><small>${({easy:'5 sospetti · indizi espliciti',medium:'6 sospetti · falsi collegamenti',hard:'7 sospetti · alibi concatenati',extreme:'8 sospetti · nessun indizio evidenziato'})[l]}</small></button>`).join('')}</div>
+        </div>
+        <div class="sg2-alibi-preview" aria-label="Anteprima di L'Ultimo Alibi"><div class="la-preview-desk"><span class="paper p1"></span><span class="paper p2"></span><span class="glass"></span><span class="clock">22:17</span><span class="key">◆</span></div><div class="la-preview-lamp"></div><div class="la-preview-shadow"></div><div class="la-preview-title"><small>CASO RISERVATO</small><b>CHI<br>MENTE?</b></div></div>
+      </section>
+      ${bottomNav()}
+    </div>`;
+  };
+
   startGame = function startGameV25(game, level, opts = {}) {
     clearSG2Mode();
-    if (game !== 'shiftline' && game !== 'lumina' && game !== 'everybody' && game !== 'another') return legacyStartGame(game, level, opts);
+    if (game !== 'shiftline' && game !== 'lumina' && game !== 'everybody' && game !== 'another' && game !== 'alibi') return legacyStartGame(game, level, opts);
     activeSaved = false;
     activeGame = game;
     activeLevel = level;
@@ -305,7 +345,8 @@
     if(game==='shiftline') startShiftline(level);
     else if(game==='lumina') startLumina(level);
     else if(game==='everybody') startEverybody(level);
-    else startAnother(level);
+    else if(game==='another') startAnother(level);
+    else startAlibi(level);
   };
 
   const DIRS = [
@@ -1111,4 +1152,249 @@
 
   // Ridisegna la Home già caricata da app.js includendo la nuova sezione.
   renderHome();
+
+  // ---------- L'ULTIMO ALIBI ----------
+  const LA_CONFIG={
+    easy:{suspects:5,evidence:5,events:5,hint:true,attemptInfo:'detail'},
+    medium:{suspects:6,evidence:6,events:5,hint:true,attemptInfo:'count'},
+    hard:{suspects:7,evidence:7,events:5,hint:false,attemptInfo:'count'},
+    extreme:{suspects:8,evidence:8,events:5,hint:false,attemptInfo:'none'}
+  };
+  const LA_NAMES=['Elena Ferri','Andrea Riva','Marta Valli','Riccardo Neri','Giulia Serra','Paolo Conti','Claudia Orsi','Lorenzo Greco','Sara Berti','Davide Sala','Irene Costa','Giorgio Lanza'];
+  const LA_ROLES=['nipote della vittima','socio d’affari','segretaria personale','medico di famiglia','fratello della vittima','avvocata di casa','collezionista rivale','governante','giornalista','amico d’infanzia','amministratrice','maggiordomo'];
+  const LA_MOTIVES=[
+    {id:'inheritance',label:'Eredità',text:'una modifica imminente del testamento avrebbe escluso questa persona'},
+    {id:'blackmail',label:'Ricatto',text:'la vittima custodiva documenti capaci di distruggerne la reputazione'},
+    {id:'debts',label:'Debiti',text:'un debito importante sarebbe diventato esigibile il mattino seguente'},
+    {id:'fraud',label:'Frode',text:'la vittima aveva scoperto un ammanco nei conti'},
+    {id:'revenge',label:'Vendetta',text:'un vecchio scandalo era stato provocato dalla vittima'},
+    {id:'career',label:'Carriera',text:'la vittima stava per revocare un incarico decisivo'},
+    {id:'secret',label:'Segreto',text:'una lettera privata rischiava di diventare pubblica'},
+    {id:'property',label:'Proprietà',text:'una vendita imminente avrebbe fatto perdere una proprietà contesa'}
+  ];
+  const LA_SETTINGS=[
+    {name:'Villa Bellombra',place:'una villa isolata durante un temporale',rooms:['Salone','Biblioteca','Serra','Studio','Sala da musica','Veranda','Cucina','Corridoio']},
+    {name:'Hotel Miralago',place:'un albergo sul lago chiuso per la notte',rooms:['Salone','Biblioteca','Veranda','Bar','Sala da tè','Cucina','Corridoio','Giardino d’inverno']},
+    {name:'Tenuta Roccanera',place:'una tenuta di campagna durante una cena di famiglia',rooms:['Salone','Studio','Serra','Biblioteca','Sala da pranzo','Cucina','Veranda','Galleria']},
+    {name:'Palazzo Orsini',place:'un palazzo storico durante un ricevimento privato',rooms:['Salone','Biblioteca','Galleria','Studio','Sala della musica','Cucina','Terrazza','Corridoio']}
+  ];
+  const LA_ARCHETYPES=[
+    {id:'recording',method:'Colpo alla nuca',trick:'Voce registrata',methodDesc:'un fermacarte di bronzo usato come arma',trickDesc:'una registrazione ha fatto credere che la vittima fosse viva più tardi',decisive:'whistle'},
+    {id:'delay',method:'Veleno ad azione ritardata',trick:'Morte ritardata',methodDesc:'una sostanza ingerita molto prima del collasso',trickDesc:'l’ora del crollo non coincide con l’ora dell’avvelenamento',decisive:'toxin'},
+    {id:'clock',method:'Strangolamento',trick:'Orologio falsificato',methodDesc:'una cordicella sottile poi rimossa dalla scena',trickDesc:'l’orologio fermo è stato regolato per spostare artificialmente l’ora del delitto',decisive:'wax'},
+    {id:'latch',method:'Colpo con oggetto pesante',trick:'Porta a scatto',methodDesc:'un oggetto della stanza, ripulito e rimesso al suo posto',trickDesc:'la porta si chiude automaticamente: non era affatto un delitto in stanza chiusa',decisive:'latch'},
+    {id:'glass',method:'Veleno nel bicchiere',trick:'Scambio dei bicchieri',methodDesc:'il veleno era destinato a un bicchiere preciso, poi scambiato',trickDesc:'il bicchiere della vittima è stato sostituito dopo il brindisi',decisive:'monogram'},
+    {id:'music',method:'Colpo alla tempia',trick:'Musica automatica',methodDesc:'un piccolo martello decorativo della sala della musica',trickDesc:'un carillon programmato ha fatto credere che qualcuno stesse ancora suonando',decisive:'spring'}
+  ];
+  function laPick(arr){return arr[Math.floor(activeRng()*arr.length)]}
+  function laTime(base,delta){const [h,m]=base.split(':').map(Number),n=h*60+m+delta;return `${String(Math.floor(n/60)%24).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`}
+  function laShuffle(arr){return shuffle(arr,activeRng)}
+  function laGenerate(level){
+    const cfg=LA_CONFIG[level],setting=laPick(LA_SETTINGS),arch=laPick(LA_ARCHETYPES),names=laShuffle(LA_NAMES).slice(0,cfg.suspects),roles=laShuffle(LA_ROLES).slice(0,cfg.suspects),motives=laShuffle(LA_MOTIVES).slice(0,cfg.suspects),culprit=Math.floor(activeRng()*cfg.suspects),victim=laPick(['Edoardo Valli','Alberto Rinaldi','Vittorio Malaspina','Cesare Bellini','Livia Montorsi']);
+    const baseHour=21+Math.floor(activeRng()*2),baseMin=[5,10,15,20,25,30][Math.floor(activeRng()*6)],apparent=`${String(baseHour).padStart(2,'0')}:${String(baseMin).padStart(2,'0')}`,realOffset=arch.id==='recording'?-15:arch.id==='clock'?-12:arch.id==='delay'?-30:arch.id==='music'?-10:0,real=laTime(apparent,realOffset);
+    const crimeRoom=setting.rooms[1],findTime=laTime(apparent,10),culpritMotive=motives[culprit];
+    const rooms=laShuffle(setting.rooms.filter(r=>r!==crimeRoom));
+    const suspects=names.map((name,i)=>{
+      const room=rooms[i%rooms.length],witness=names[(i+1)%names.length],isC=i===culprit;
+      let alibi=`Alle ${apparent} ero in ${room}. ${i%2===0?`${witness} può confermare di avermi visto poco dopo.`:`C’è un dettaglio nella stanza che può confermarlo.`}`;
+      let obs=`Ho visto ${names[(i+2)%names.length]} dirigersi verso ${setting.rooms[(i+3)%setting.rooms.length]} prima che trovassero il corpo.`;
+      if(isC){
+        alibi=`Alle ${apparent} ero in ${room}; il mio alibi per quell’ora è verificabile.`;
+        obs=arch.id==='delay'?`La vittima sembrava perfettamente normale quando l’ho lasciata prima delle ${apparent}.`:`Non ho più visto ${victim} dopo cena.`;
+      }
+      return {id:`s${i}`,name,role:roles[i],motive:motives[i],room,isC,initials:name.split(' ').map(x=>x[0]).join('').slice(0,2),relation:`${name} è ${roles[i]}. Tra i due c’erano tensioni: ${motives[i].text}.`,alibi,obs};
+    });
+    const c=suspects[culprit],other=suspects[(culprit+1)%suspects.length];
+    let evidence=[],events=[];
+    if(arch.id==='recording'){
+      evidence=[
+        ['clock','Orologio da tavolo','◷',`Segna ${apparent}. Non presenta segni di manomissione e continua a funzionare.`],
+        ['recorder','Registratore tascabile','▣','Nel mobile accanto alla scrivania c’è un registratore con il nastro ancora inserito.'],
+        ['whistle','Il fischio lontano','≋',`Nella frase attribuita alla vittima alle ${apparent} si sente un fischio ferroviario. L’ultimo treno era passato alle ${laTime(apparent,-20)}.`],
+        ['weapon','Fermacarte di bronzo','◆','Sul bordo inferiore è stata rimossa in fretta una piccola macchia scura.'],
+        ['note','Appunto strappato','✎',`“Parlerò con ${c.name.split(' ')[0]} prima di tutti.”`],
+        ['door','Porta della biblioteca','▯','Nessun segno di effrazione. La porta era socchiusa quando il corpo è stato trovato.'],
+        ['glass','Bicchiere','◌','Contiene solo acqua. Nessuna sostanza insolita.'],
+        ['train','Orario ferroviario','≡',`Il treno serale passa dietro la tenuta una sola volta, alle ${laTime(apparent,-20)}.`]
+      ];
+      events=[
+        [`${laTime(apparent,-25)} · ${victim} entra in ${crimeRoom}`,'La vittima si ritira con alcuni documenti.'],
+        [`${laTime(apparent,-20)} · passa il treno`,'Il fischio è udibile chiaramente dalla biblioteca.'],
+        [`${real} · aggressione`,'Il colpo mortale avviene prima dell’ora che tutti considereranno decisiva.'],
+        [`${apparent} · si sente la voce della vittima`,'Una frase registrata viene riprodotta dalla biblioteca.'],
+        [`${findTime} · viene trovato il corpo`,'La registrazione ha spostato in avanti l’ora apparente del delitto.']
+      ];
+    }else if(arch.id==='delay'){
+      evidence=[
+        ['glass','Bicchiere da liquore','◌','Sul fondo resta una traccia di liquore alle erbe.'],
+        ['toxin','Referto preliminare','✚',`La sostanza trovata agisce in circa 25–35 minuti: il collasso alle ${apparent} implica ingestione molto prima.`],
+        ['tray','Vassoio','▤',`${c.name} aveva aiutato a preparare il vassoio servito alla vittima.`],
+        ['photo','Fotografia della cena','▣',`Alle ${laTime(apparent,-30)} la vittima ha già in mano lo stesso bicchiere.`],
+        ['note','Lettera privata','✎',`La vittima minacciava di rivelare ciò che riguardava ${c.name}.`],
+        ['bottle','Bottiglia','⌁','La bottiglia comune è pulita: la sostanza non era nel contenitore condiviso.'],
+        ['spoon','Cucchiaino','◇','Sul cucchiaino usato per preparare il bicchiere c’è una traccia compatibile.'],
+        ['doctor','Nota medica','✚','La vittima non assumeva farmaci che potessero spiegare il collasso.']
+      ];
+      events=[
+        [`${laTime(apparent,-35)} · si prepara il digestivo`,'Il bicchiere destinato alla vittima viene preparato.'],
+        [`${laTime(apparent,-30)} · la vittima beve`,'L’ingestione avviene durante la conversazione.'],
+        [`${laTime(apparent,-15)} · gli ospiti si separano`,'Il futuro colpevole può ormai costruirsi un alibi.'],
+        [`${apparent} · la vittima crolla`,'Gli effetti della sostanza diventano visibili.'],
+        [`${findTime} · si comprende la gravità`,'Tutti pensano inizialmente a un malore improvviso.']
+      ];
+    }else if(arch.id==='clock'){
+      evidence=[
+        ['clock','Orologio rotto','◷',`Le lancette sono ferme sulle ${apparent}. Il vetro, però, è intatto.`],
+        ['wax','Candela della scrivania','♨',`La candela è stata accesa alle ${laTime(apparent,-25)} e la colatura indica circa tredici minuti di combustione prima che venisse spenta.`],
+        ['cord','Cordicella di seta','⌁','Un piccolo filo spezzato è rimasto sotto il bordo del tappeto.'],
+        ['hands','Polvere sulle lancette','◇','Sul bordo dell’orologio c’è una strisciata recente, come se le lancette fossero state mosse a mano.'],
+        ['note','Agenda della vittima','✎',`Alle ${real} era previsto un incontro privato con ${c.name}.`],
+        ['window','Finestra','▯','Chiusa dall’interno. Nessuna via di fuga esterna.'],
+        ['ash','Cenere nel camino','≈','Un frammento di lettera bruciata contiene le iniziali del movente.'],
+        ['shoe','Segno sul tappeto','⌁',`Un’impronta compatibile con le scarpe di ${c.name} è vicino alla scrivania, non alla porta.`]
+      ];
+      events=[
+        [`${laTime(apparent,-25)} · viene accesa la candela`,'La vittima inizia a lavorare alla scrivania.'],
+        [`${real} · incontro privato`,'Il vero momento del delitto è prima dell’ora indicata dall’orologio.'],
+        [`${laTime(apparent,-8)} · la stanza resta silenziosa`,'Nessuno entra.'],
+        [`${apparent} · l’orologio sembra fissare l’ora del delitto`,'È un indizio costruito, non una registrazione affidabile.'],
+        [`${findTime} · corpo scoperto`,'L’ora falsa indirizza subito i sospetti verso altri alibi.']
+      ];
+    }else if(arch.id==='latch'){
+      evidence=[
+        ['latch','Serratura a scatto','▯','Il chiavistello scatta automaticamente appena la porta viene tirata: non serve una chiave dall’esterno.'],
+        ['key','Chiave sul tappeto','◆','La chiave trovata dentro la stanza non è necessaria per chiudere la porta.'],
+        ['weapon','Statua di marmo','♜','La base è stata pulita di recente; in una scanalatura resta una fibra.'],
+        ['fiber','Fibra scura','⌁',`La fibra corrisponde al tessuto dell’abito indossato da ${c.name}.`],
+        ['note','Documento aperto','✎',`Il fascicolo riguarda direttamente ${c.name} e il motivo del conflitto.`],
+        ['window','Finestra','▯','Bloccata da settimane per un difetto del telaio.'],
+        ['dust','Polvere sul davanzale','◇','Intatta: nessuno è passato dalla finestra.'],
+        ['bell','Campanello','◉','La vittima aveva suonato per chiedere che nessuno la disturbasse pochi minuti prima.']
+      ];
+      events=[
+        [`${laTime(apparent,-12)} · ${c.name} entra in ${crimeRoom}`,'L’incontro avviene senza testimoni.'],
+        [`${real} · aggressione`,'L’arma è un oggetto già presente nella stanza.'],
+        [`${laTime(apparent,-4)} · il colpevole esce`,'La porta viene semplicemente tirata dietro di sé.'],
+        [`${apparent} · la porta risulta chiusa`,'Tutti la interpretano erroneamente come chiusa dall’interno.'],
+        [`${findTime} · la porta viene forzata`,'La chiave a terra rende la scena più misteriosa di quanto sia.']
+      ];
+    }else if(arch.id==='glass'){
+      evidence=[
+        ['monogram','Bicchiere con monogramma','◌',`Il bicchiere personale della vittima, con iniziali incise, è stato trovato sul carrello invece che sulla scrivania.`],
+        ['glass2','Secondo bicchiere','◉','Quello accanto al corpo non porta alcun monogramma.'],
+        ['toxin','Analisi del residuo','✚','La sostanza è presente solo nel bicchiere senza monogramma.'],
+        ['tray','Carrello dei liquori','▤',`${c.name} è stato visto accanto al carrello dopo il brindisi.`],
+        ['cloth','Panno umido','◇','Il panno del carrello contiene tracce dello stesso liquore e una minima quantità della sostanza.'],
+        ['note','Biglietto','✎',`La vittima aveva convocato ${c.name} per discutere una questione delicata.`],
+        ['bottle','Bottiglia comune','⌁','Nessuna traccia di veleno: il contenuto condiviso era sicuro.'],
+        ['print','Impronta parziale','⌕',`Sul bicchiere scambiato compare un’impronta compatibile con ${c.name}.`]
+      ];
+      events=[
+        [`${laTime(apparent,-20)} · brindisi`,'Tutti usano bicchieri diversi.'],
+        [`${laTime(apparent,-14)} · la vittima lascia il bicchiere`,'Il bicchiere personale resta incustodito per pochi minuti.'],
+        [`${laTime(apparent,-10)} · scambio`,'Il bicchiere senza monogramma viene messo al posto di quello della vittima.'],
+        [`${apparent} · la vittima beve`,'La sostanza viene ingerita.'],
+        [`${findTime} · il corpo viene trovato`,'Il bicchiere sbagliato resta accanto alla vittima.']
+      ];
+    }else{
+      evidence=[
+        ['piano','Pianoforte','♫',`Alle ${apparent} tutti hanno sentito lo stesso motivo provenire dalla sala della musica.`],
+        ['spring','Meccanismo automatico','⚙','Sotto il leggio c’è un carillon a molla collegato al pianoforte: può riprodurre da solo un breve motivo.'],
+        ['weapon','Martello decorativo','◆','Un oggetto del metronomo presenta una piccola ammaccatura recente.'],
+        ['note','Spartito annotato','✎',`Sul margine compare l’ora ${apparent}, scritta da una mano diversa da quella della vittima.`],
+        ['fiber','Filo di lana','⌁',`Sul meccanismo c’è un filo dello stesso colore dell’abito di ${c.name}.`],
+        ['chair','Sgabello','□','La polvere sullo sgabello è uniforme: nessuno era seduto al pianoforte quando il motivo è stato udito.'],
+        ['clock','Metronomo','◷','Il metronomo era stato caricato molto prima e non richiede presenza umana.'],
+        ['letter','Lettera','✎',`La vittima stava per affrontare ${c.name} su ${culpritMotive.label.toLowerCase()}.`]
+      ];
+      events=[
+        [`${laTime(apparent,-18)} · viene caricato il meccanismo`,'Qualcuno prepara l’alibi sonoro.'],
+        [`${real} · aggressione`,'Il delitto avviene prima della musica.'],
+        [`${laTime(apparent,-4)} · il colpevole raggiunge altri ospiti`,'L’alibi personale è ormai costruito.'],
+        [`${apparent} · si sente il pianoforte`,'Il carillon automatico simula una presenza nella stanza.'],
+        [`${findTime} · corpo scoperto`,'Solo allora si controlla la sala della musica.']
+      ];
+    }
+    evidence=evidence.slice(0,cfg.evidence).map((e,i)=>({id:e[0],title:e[1],icon:e[2],text:e[3],essential:true,index:i}));
+    // pad timeline with neutral but ordered observations for higher levels
+    while(events.length<cfg.events){const n=events.length;events.splice(Math.max(1,events.length-1),0,[`${laTime(apparent,-18+n*2)} · passaggio nel corridoio`,`Un domestico annota un movimento che aiuta a fissare la sequenza.`])}
+    events=events.slice(0,cfg.events).map((e,i)=>({id:`e${i}`,label:e[0],text:e[1],order:i}));
+    const accusationOptions={
+      culprit:laShuffle(suspects.map(x=>({id:x.id,label:x.name}))),
+      motive:laShuffle(motives.slice(0,Math.min(motives.length,5)).map(x=>({id:x.id,label:x.label}))),
+      method:laShuffle([arch.method,'Veleno nel vino','Colpo d’arma da fuoco','Soffocamento','Caduta provocata'].filter((x,i,a)=>a.indexOf(x)===i).slice(0,5).map(x=>({id:x,label:x}))),
+      trick:laShuffle([arch.trick,'Finestra segreta','Testimone complice','Travestimento','Scambio di persona'].filter((x,i,a)=>a.indexOf(x)===i).slice(0,5).map(x=>({id:x,label:x}))),
+      clue:laShuffle(evidence.map(x=>({id:x.id,label:x.title})).slice(0,Math.min(6,evidence.length)))
+    };
+    if(!accusationOptions.motive.some(x=>x.id===culpritMotive.id)) accusationOptions.motive[0]={id:culpritMotive.id,label:culpritMotive.label};
+    if(!accusationOptions.clue.some(x=>x.id===arch.decisive)){const decisiveMap={whistle:'Il fischio lontano',toxin:'Referto preliminare',wax:'Candela della scrivania',latch:'Serratura a scatto',monogram:'Bicchiere con monogramma',spring:'Meccanismo automatico'};accusationOptions.clue[0]={id:arch.decisive,label:decisiveMap[arch.decisive]}}
+    return {cfg,setting,arch,victim,apparent,real,findTime,suspects,culprit,culpritMotive,crimeRoom,evidence,events,accusationOptions,solution:{culprit:`s${culprit}`,motive:culpritMotive.id,method:arch.method,trick:arch.trick,clue:arch.decisive},title:`Il caso di ${setting.name}`,intro:`${victim} viene trovato senza vita in ${crimeRoom.toLowerCase()} a ${setting.name}, ${setting.place}. Tutti i presenti hanno un motivo. Quasi tutti hanno anche un alibi.`};
+  }
+  function laPortrait(s){return `<span class="la-avatar">${s.initials}</span>`}
+  function laSelect(name,options,placeholder){return `<div class="la-acc-group"><label>${name}</label><div class="la-choice-grid" data-accgroup="${name}">${options.map(o=>`<button type="button" data-id="${esc(o.id)}">${esc(o.label)}</button>`).join('')}</div><small>${placeholder}</small></div>`}
+  function startAlibi(level){
+    setSG2Mode('sg2-alibi-play');
+    setHeader("L'ULTIMO ALIBI",LEVEL_NAMES[level]);
+    const g=laGenerate(level),session=sessionState('alibi',level),seenEvidence=new Set(),seenSuspects=new Set(),acc={culprit:null,motive:null,method:null,trick:null,clue:null};
+    let phase='scene',timeline=laShuffle(g.events.map(e=>({...e}))),timelineSolved=false,challenge=false,attempts=0,finished=false;if(timeline.every((e,i)=>e.order===i)&&timeline.length>1)[timeline[0],timeline[1]]=[timeline[1],timeline[0]];
+    app.innerHTML=gameShell('alibi',level,`
+      <div class="la-case-head"><div><span>CASO ${String(session.session).padStart(2,'0')}</span><b>${esc(g.title)}</b><small>${esc(g.intro)}</small></div><div class="la-case-time"><small>ORA APPARENTE</small><strong>${g.apparent}</strong></div></div>
+      <nav class="la-tabs">
+        <button class="active" data-latab="scene"><span>1</span><b>Scena</b></button>
+        <button data-latab="suspects"><span>2</span><b>Sospetti</b></button>
+        <button data-latab="timeline"><span>3</span><b>Timeline</b></button>
+        <button data-latab="accuse" disabled><span>4</span><b>Accusa</b></button>
+      </nav>
+      <section class="la-panel active" data-lapanel="scene">
+        <div class="la-crime-visual"><div class="la-room-name">${esc(g.crimeRoom)}</div><span class="la-body-mark">×</span><span class="la-clock-mark">${g.apparent}</span><span class="la-paper-mark"></span><span class="la-glass-mark">◌</span><div class="la-scene-copy"><b>${esc(g.victim)}</b><small>Corpo scoperto alle ${g.findTime}</small></div></div>
+        <div class="la-section-title"><span>01</span><div><b>Indizi sulla scena</b><small>Tocca ogni elemento per esaminarlo. Non tutti pesano allo stesso modo.</small></div></div>
+        <div class="la-evidence-grid">${g.evidence.map(e=>`<button data-evidence="${e.id}"><span>${e.icon}</span><div><b>${esc(e.title)}</b><small>Da esaminare</small></div><i>›</i></button>`).join('')}</div>
+        <div id="laEvidenceDetail" class="la-detail-box"><b>Scegli un indizio</b><span>I dettagli appariranno qui.</span></div>
+        <button class="la-next" data-lago="suspects">Interroga i sospetti <span>→</span></button>
+      </section>
+      <section class="la-panel" data-lapanel="suspects">
+        <div class="la-section-title"><span>02</span><div><b>Cerchia dei sospetti</b><small>Motivo, alibi e osservazione: ascolta tutti prima di decidere chi credere.</small></div></div>
+        <div class="la-suspects">${g.suspects.map(s=>`<button data-suspect="${s.id}">${laPortrait(s)}<div><b>${esc(s.name)}</b><small>${esc(s.role)}</small></div><i>›</i></button>`).join('')}</div>
+        <div id="laSuspectDetail" class="la-suspect-detail"><div class="la-empty-person">?</div><p>Scegli un sospetto per aprire il suo fascicolo.</p></div>
+        <button class="la-next" data-lago="timeline">Ricostruisci la timeline <span>→</span></button>
+      </section>
+      <section class="la-panel" data-lapanel="timeline">
+        <div class="la-section-title"><span>03</span><div><b>Ordina gli eventi</b><small>Usa ↑ e ↓. Non ti diremo quali eventi sono sbagliati, solo quanti sono fuori posto.</small></div></div>
+        <div id="laTimeline" class="la-timeline"></div>
+        <div id="laTimelineFeedback" class="la-feedback"><b>Ricostruzione non verificata</b><span>L’ordine corretto può cambiare completamente il valore di un alibi.</span></div>
+        <div class="actions"><button id="laTimelineReset" class="secondary">Rimescola</button><button id="laTimelineCheck" class="primary">Verifica ordine</button></div>
+      </section>
+      <section class="la-panel" data-lapanel="accuse">
+        <div class="la-challenge"><span>LA SFIDA</span><h3>Hai tutto ciò che serve per risolvere il caso.</h3><p>Nessun nuovo indizio essenziale verrà introdotto. Costruisci un’accusa completa.</p></div>
+        <div class="la-accusation">
+          ${laSelect('Colpevole',g.accusationOptions.culprit,'Chi ha commesso il delitto?')}
+          ${laSelect('Movente',g.accusationOptions.motive,'Perché?')}
+          ${laSelect('Metodo',g.accusationOptions.method,'Come?')}
+          ${laSelect('Alibi',g.accusationOptions.trick,'Qual era il trucco?')}
+          ${laSelect('Prova',g.accusationOptions.clue,'Quale indizio fa crollare la ricostruzione alternativa?')}
+        </div>
+        <div id="laAccFeedback" class="la-feedback"><b>La sala aspetta.</b><span>Quando sei pronto, formula l’accusa.</span></div>
+        <div class="actions"><button id="laAccuse" class="primary wide">⚖ Formula l’accusa</button></div>
+      </section>
+    `);
+    const tabs=[...document.querySelectorAll('.la-tabs button')],panels=[...document.querySelectorAll('.la-panel')];
+    function setPhase(name){phase=name;tabs.forEach(b=>b.classList.toggle('active',b.dataset.latab===name));panels.forEach(p=>p.classList.toggle('active',p.dataset.lapanel===name));document.querySelector('.game-alibi')?.scrollIntoView({behavior:'smooth',block:'start'})}
+    tabs.forEach(b=>b.onclick=()=>{if(!b.disabled)setPhase(b.dataset.latab)});document.querySelectorAll('[data-lago]').forEach(b=>b.onclick=()=>setPhase(b.dataset.lago));
+    const evDetail=document.getElementById('laEvidenceDetail');
+    document.querySelectorAll('[data-evidence]').forEach(b=>b.onclick=()=>{const e=g.evidence.find(x=>x.id===b.dataset.evidence);seenEvidence.add(e.id);b.classList.add('seen');b.querySelector('small').textContent='Esaminato';evDetail.innerHTML=`<div class="la-detail-icon">${e.icon}</div><div><b>${esc(e.title)}</b><p>${esc(e.text)}</p></div>`;checkChallenge()});
+    const susDetail=document.getElementById('laSuspectDetail');
+    document.querySelectorAll('[data-suspect]').forEach(b=>b.onclick=()=>{const s=g.suspects.find(x=>x.id===b.dataset.suspect);seenSuspects.add(s.id);document.querySelectorAll('[data-suspect]').forEach(x=>x.classList.toggle('active',x===b));b.classList.add('seen');susDetail.innerHTML=`<div class="la-person-head">${laPortrait(s)}<div><b>${esc(s.name)}</b><small>${esc(s.role)}</small></div></div><div class="la-person-grid"><article><span>RAPPORTO / MOVENTE</span><p>${esc(s.relation)}</p></article><article><span>ALIBI</span><p>${esc(s.alibi)}</p></article><article><span>OSSERVAZIONE</span><p>${esc(s.obs)}</p></article></div>`;checkChallenge()});
+    const tl=document.getElementById('laTimeline'),tlFb=document.getElementById('laTimelineFeedback');
+    function renderTimeline(){tl.innerHTML=timeline.map((e,i)=>`<article data-event="${e.id}"><div class="la-time-index">${String(i+1).padStart(2,'0')}</div><div><b>${esc(e.label)}</b><small>${esc(e.text)}</small></div><div class="la-order-btns"><button data-up="${i}" ${i===0?'disabled':''}>↑</button><button data-down="${i}" ${i===timeline.length-1?'disabled':''}>↓</button></div></article>`).join('');tl.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>{const i=+b.dataset.up;[timeline[i-1],timeline[i]]=[timeline[i],timeline[i-1]];renderTimeline()});tl.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>{const i=+b.dataset.down;[timeline[i+1],timeline[i]]=[timeline[i],timeline[i+1]];renderTimeline()})}
+    renderTimeline();
+    document.getElementById('laTimelineReset').onclick=()=>{timeline=laShuffle(g.events.map(e=>({...e})));timelineSolved=false;renderTimeline();tlFb.className='la-feedback';tlFb.innerHTML='<b>Timeline rimescolata.</b><span>Ricostruisci nuovamente la sequenza.</span>'};
+    document.getElementById('laTimelineCheck').onclick=()=>{const misplaced=timeline.filter((e,i)=>e.order!==i).length;if(!misplaced){timelineSolved=true;tlFb.className='la-feedback success';tlFb.innerHTML=`<b>Sequenza coerente.</b><span>${g.arch.id==='delay'?'Il momento del collasso non coincide con quello dell’avvelenamento.':g.arch.id==='recording'||g.arch.id==='music'?'Un evento udito più tardi non prova che la vittima fosse ancora viva.':g.arch.id==='clock'?'L’ora mostrata dalla scena non è necessariamente l’ora reale del delitto.':g.arch.id==='latch'?'La porta chiusa non dimostra che nessuno sia uscito.':'Lo scambio è avvenuto prima che la vittima usasse il bicchiere.'}</span>`}else{tlFb.className='la-feedback bad';tlFb.innerHTML=`<b>La sequenza non regge.</b><span>${misplaced} evento${misplaced>1?'i':''} ${misplaced>1?'sono':'è'} ancora fuori posizione.</span>`}checkChallenge()};
+    function checkChallenge(){if(challenge)return;const complete=seenEvidence.size===g.evidence.length&&seenSuspects.size===g.suspects.length;if(complete){challenge=true;const accTab=tabs.find(x=>x.dataset.latab==='accuse');accTab.disabled=false;const flash=document.createElement('div');flash.className='la-challenge-flash';flash.innerHTML='<small>LA SFIDA</small><b>Hai tutto ciò che serve.</b><span>Nessun nuovo indizio decisivo verrà introdotto.</span>';document.body.appendChild(flash);setTimeout(()=>flash.remove(),2400)}}
+    document.querySelectorAll('.la-choice-grid').forEach(grid=>grid.querySelectorAll('button').forEach(b=>b.onclick=()=>{grid.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b));const label=grid.dataset.accgroup,key={Colpevole:'culprit',Movente:'motive',Metodo:'method',Alibi:'trick',Prova:'clue'}[label];acc[key]=b.dataset.id}));
+    const accFb=document.getElementById('laAccFeedback');
+    document.getElementById('laAccuse').onclick=()=>{if(finished)return;if(Object.values(acc).some(x=>!x))return toast('Completa tutti i cinque elementi dell’accusa');attempts++;const keys=['culprit','motive','method','trick','clue'],correct=keys.filter(k=>acc[k]===g.solution[k]);if(correct.length===keys.length){finished=true;const sec=Math.floor((Date.now()-activeStart)/1000),score=Math.max(200,3000-attempts*140-sec*2+(timelineSolved?250:0));const culprit=g.suspects[g.culprit];accFb.className='la-feedback success';accFb.innerHTML=`<b>Accusa dimostrata.</b><span><strong>${esc(culprit.name)}</strong> ha agito per ${esc(g.culpritMotive.label.toLowerCase())}. ${esc(g.arch.methodDesc)}; ${esc(g.arch.trickDesc)}. La prova decisiva è “${esc(g.accusationOptions.clue.find(x=>x.id===g.solution.clue)?.label||g.solution.clue)}”.</span>`;setTimeout(()=>concludeSession('alibi',level,score,true,`Caso risolto: <b>${esc(culprit.name)}</b>. Tentativi d’accusa: <b>${attempts}</b>.`),1100);return}accFb.className='la-feedback bad';if(g.cfg.attemptInfo==='detail'){const wrong=keys.filter(k=>!correct.includes(k)).map(k=>({culprit:'colpevole',motive:'movente',method:'metodo',trick:'alibi',clue:'prova'}[k]));accFb.innerHTML=`<b>L’accusa non regge.</b><span>Rivedi: ${wrong.join(', ')}.</span>`}else if(g.cfg.attemptInfo==='count'){accFb.innerHTML=`<b>L’accusa non regge.</b><span>${correct.length}/5 elementi sono coerenti, ma la teoria complessiva ha ancora una falla.</span>`}else accFb.innerHTML='<b>L’accusa non regge.</b><span>Una o più parti della teoria contraddicono gli indizi. Il gioco non indica quali.</span>'};
+    startTimer();
+    if(!localStorage.getItem('sala_giochi_alibi_help_v1')){localStorage.setItem('sala_giochi_alibi_help_v1','1');setTimeout(()=>openHelp(),260)}
+  }
+
 })();
