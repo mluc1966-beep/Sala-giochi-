@@ -1,10 +1,10 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
-   v2.9.0: L'ULTIMO ALIBI espanso a 30 meccanismi investigativi con combinazioni e depistaggi. */
+   v2.10.0: tablet-first globale + Puzzle 2.0 con 100+ fotografie, filtri, anti-ripetizione e tessere variabili. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.9.0';
+  const NEXTGEN_VERSION = '2.10.0';
 
   GAME_NAMES.fifteen = 'Gioco del 15';
   GAME_NAMES.picturepuzzle = 'Puzzle';
@@ -55,17 +55,17 @@
 
   GAME_HELP.picturepuzzle = {
     title: 'Puzzle',
-    goal: 'Ricostruisci l’immagine rimettendo ogni tessera nella sua posizione corretta.',
+    goal: 'Ricostruisci l’immagine scegliendo foto o illustrazioni e una delle diverse forme di puzzle.',
     steps: [
-      'Osserva l’immagine completa di riferimento.',
-      'Tocca una tessera e poi una seconda tessera per scambiarle.',
-      'Continua finché l’immagine non è ricomposta completamente.',
-      'La difficoltà aumenta passando da una griglia 3×3 fino a 6×6 e riducendo i suggerimenti.'
+      'Prima di iniziare scegli il tipo di immagini, la categoria e la modalità delle tessere.',
+      'Classico usa una griglia regolare; Mosaico usa pezzi rettangolari di dimensioni diverse; Sagomato usa pezzi irregolari.',
+      'Nel Classico tocca due tessere per scambiarle. In Mosaico e Sagomato seleziona un pezzo dal vassoio e poi il punto del quadro in cui pensi vada collocato.',
+      'Il gioco ricorda le immagini usate di recente e cerca di non riproporle nelle sessioni successive.'
     ],
     tips: [
-      'Cerca prima elementi facilmente riconoscibili: bordi, luci, linee nette e soggetti principali.',
-      'Ai livelli Facile e Medio le tessere già nella posizione corretta vengono evidenziate.',
-      'Un suggerimento sistema automaticamente una tessera fuori posto.'
+      'Sul tablet il puzzle sfrutta lo spazio orizzontale con immagine di riferimento, quadro e vassoio affiancati.',
+      'Le fotografie vengono caricate dalla rete la prima volta e poi possono restare nella cache del dispositivo.',
+      'Se una fotografia non è disponibile, il gioco passa automaticamente a un’illustrazione locale.'
     ]
   };
 
@@ -837,38 +837,250 @@
     render();startTimer();
   }
 
-  // ---------- PUZZLE A IMMAGINE ----------
+  // ---------- PUZZLE 2.0 — TABLET FIRST ----------
   const PICTURE_PUZZLE_CONFIG={
-    easy:{size:3,hints:4,mark:true,label:'9 tessere'},
-    medium:{size:4,hints:3,mark:true,label:'16 tessere'},
-    hard:{size:5,hints:1,mark:false,label:'25 tessere'},
-    extreme:{size:6,hints:0,mark:false,label:'36 tessere'}
+    easy:{size:3,hints:4,mark:true,mosaicCount:9,label:'9 pezzi'},
+    medium:{size:4,hints:3,mark:true,mosaicCount:12,label:'12–16 pezzi'},
+    hard:{size:5,hints:1,mark:false,mosaicCount:18,label:'18–25 pezzi'},
+    extreme:{size:6,hints:0,mark:false,mosaicCount:24,label:'24–36 pezzi'}
   };
-  const PICTURE_PUZZLE_IMAGES=[
-    ['assets/home-room.svg','Tramonto in salotto'],
-    ['assets/classic-desk.svg','Tavolo dei giochi'],
-    ['assets/future-city.svg','Città del futuro'],
-    ['assets/ng-lumina.svg','Lumina'],
-    ['assets/ng-another.svg','Another World'],
-    ['assets/ng-alibi.svg','Il caso']
+
+  const PICTURE_CATEGORY_DEFS=[
+    {id:'natura',label:'Natura',query:'nature,landscape'},
+    {id:'citta',label:'Città',query:'city,street'},
+    {id:'animali',label:'Animali',query:'animals,wildlife'},
+    {id:'cibo',label:'Cibo',query:'food,cuisine'},
+    {id:'architettura',label:'Architettura',query:'architecture,building'},
+    {id:'mare',label:'Mare',query:'sea,coast'},
+    {id:'montagna',label:'Montagna',query:'mountain,alps'},
+    {id:'fiori',label:'Fiori',query:'flowers,garden'},
+    {id:'oggetti',label:'Oggetti',query:'objects,stilllife'}
   ];
-  function shufflePuzzleIds(n){
-    const a=Array.from({length:n*n},(_,i)=>i);
-    for(let i=a.length-1;i>0;i--){const j=Math.floor(activeRng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
-    if(a.every((v,i)=>v===i))[a[0],a[1]]=[a[1],a[0]];
-    return a;
+  const PICTURE_TYPE_LABELS={mixed:'Miste',photo:'Solo fotografie',illustration:'Solo illustrazioni'};
+  const PICTURE_MODE_LABELS={auto:'Automatico',classic:'Classico',mosaic:'Mosaico',shaped:'Sagomato'};
+  const PICTURE_PREF_KEY='sg2_picture_prefs_v3';
+  const PICTURE_RECENT_KEY='sg2_picture_recent_v3';
+
+  function puzzlePhotoUrl(cat,index){
+    const ci=PICTURE_CATEGORY_DEFS.findIndex(x=>x.id===cat.id);
+    const lock=33001+ci*100+index;
+    return `https://loremflickr.com/1200/800/${cat.query}?lock=${lock}`;
   }
+  const PICTURE_PHOTOS=PICTURE_CATEGORY_DEFS.flatMap(cat=>
+    Array.from({length:12},(_,i)=>({
+      id:`photo-${cat.id}-${i+1}`,type:'photo',category:cat.id,
+      label:`${cat.label} · fotografia ${i+1}`,url:puzzlePhotoUrl(cat,i+1)
+    }))
+  );
+
+  function pictureIllustrationSvg(cat,index){
+    const palettes={
+      natura:['#163c35','#4f9d69','#e2c96b','#dff3dc'],
+      citta:['#14213d','#3a86ff','#ffbe0b','#edf2f4'],
+      animali:['#352f44','#b56576','#eaac8b','#ffe8d6'],
+      cibo:['#5f0f40','#9a031e','#fb8b24','#fff3b0'],
+      architettura:['#1b263b','#415a77','#e0e1dd','#fca311'],
+      mare:['#023e8a','#0096c7','#48cae4','#caf0f8'],
+      montagna:['#243b4a','#5c6f68','#a4c3b2','#eaf4f4'],
+      fiori:['#5a189a','#c77dff','#ff85a1','#fff0f3'],
+      oggetti:['#2b2d42','#8d99ae','#ef233c','#edf2f4']
+    };
+    const p=palettes[cat]||palettes.natura;
+    const seed=index+PICTURE_CATEGORY_DEFS.findIndex(x=>x.id===cat)*7;
+    const circles=Array.from({length:9},(_,i)=>{
+      const x=70+((seed*53+i*97)%1060),y=70+((seed*71+i*61)%650),r=28+((seed*29+i*41)%92);
+      return `<circle cx="${x}" cy="${y}" r="${r}" fill="${p[i%p.length]}" opacity="${.18+(i%4)*.13}"/>`;
+    }).join('');
+    const bars=Array.from({length:6},(_,i)=>{
+      const x=(seed*37+i*181)%1100,y=(seed*43+i*127)%650,w=90+((seed+i*17)%210),h=30+((seed+i*31)%130);
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${18+(i%3)*14}" fill="${p[(i+1)%p.length]}" opacity="${.22+(i%3)*.12}" transform="rotate(${(i%2?1:-1)*(8+(seed+i)%18)} ${x+w/2} ${y+h/2})"/>`;
+    }).join('');
+    const title=(PICTURE_CATEGORY_DEFS.find(x=>x.id===cat)?.label||cat).toUpperCase();
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${p[0]}"/><stop offset=".5" stop-color="${p[1]}"/><stop offset="1" stop-color="${p[2]}"/></linearGradient></defs>
+      <rect width="1200" height="800" fill="url(#g)"/>
+      <path d="M0 590 C180 ${430+(seed%80)} 330 ${720-(seed%120)} 520 570 S880 420 1200 610 V800 H0Z" fill="${p[3]}" opacity=".25"/>
+      ${circles}${bars}
+      <rect x="54" y="54" width="1092" height="692" rx="42" fill="none" stroke="${p[3]}" stroke-opacity=".36" stroke-width="4"/>
+      <text x="78" y="700" font-family="system-ui,sans-serif" font-size="44" font-weight="800" fill="${p[3]}" opacity=".78">${title}</text>
+      <text x="80" y="742" font-family="system-ui,sans-serif" font-size="23" fill="${p[3]}" opacity=".6">SALA GIOCHI · ${String(index).padStart(2,'0')}</text>
+    </svg>`;
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  }
+  const PICTURE_ILLUSTRATIONS=PICTURE_CATEGORY_DEFS.flatMap(cat=>
+    Array.from({length:4},(_,i)=>({
+      id:`illus-${cat.id}-${i+1}`,type:'illustration',category:cat.id,
+      label:`${cat.label} · illustrazione ${i+1}`,url:pictureIllustrationSvg(cat.id,i+1)
+    }))
+  );
+  const PICTURE_LIBRARY=[...PICTURE_PHOTOS,...PICTURE_ILLUSTRATIONS]; // 108 foto + 36 illustrazioni
+
+  function readPuzzlePrefs(){
+    try{
+      const p=JSON.parse(localStorage.getItem(PICTURE_PREF_KEY)||'{}');
+      return {
+        type:['mixed','photo','illustration'].includes(p.type)?p.type:'mixed',
+        category:PICTURE_CATEGORY_DEFS.some(x=>x.id===p.category)?p.category:'all',
+        mode:['auto','classic','mosaic','shaped'].includes(p.mode)?p.mode:'auto'
+      };
+    }catch{return{type:'mixed',category:'all',mode:'auto'}}
+  }
+  function savePuzzlePrefs(p){try{localStorage.setItem(PICTURE_PREF_KEY,JSON.stringify(p))}catch{}}
+  function puzzleRecent(){
+    try{const a=JSON.parse(localStorage.getItem(PICTURE_RECENT_KEY)||'[]');return Array.isArray(a)?a.slice(0,30):[]}catch{return[]}
+  }
+  function rememberPuzzleImage(id){
+    try{
+      const a=puzzleRecent().filter(x=>x!==id);a.unshift(id);
+      localStorage.setItem(PICTURE_RECENT_KEY,JSON.stringify(a.slice(0,30)));
+    }catch{}
+  }
+  function puzzleCandidates(prefs){
+    return PICTURE_LIBRARY.filter(x=>
+      (prefs.type==='mixed'||x.type===prefs.type) &&
+      (prefs.category==='all'||x.category===prefs.category)
+    );
+  }
+  function choosePuzzleImage(prefs){
+    const all=puzzleCandidates(prefs),recent=new Set(puzzleRecent());
+    const fresh=all.filter(x=>!recent.has(x.id));
+    const pool=fresh.length?fresh:all;
+    return pool[Math.floor(activeRng()*pool.length)]||PICTURE_ILLUSTRATIONS[0];
+  }
+  function resolvePuzzleMode(level,mode){
+    if(mode!=='auto')return mode;
+    if(level==='easy')return 'classic';
+    if(level==='medium')return activeRng()<.55?'classic':'mosaic';
+    if(level==='hard')return activeRng()<.52?'mosaic':'shaped';
+    return activeRng()<.48?'mosaic':'shaped';
+  }
+  function preloadPuzzleImage(entry){
+    return new Promise(resolve=>{
+      if(entry.type==='illustration'){resolve(entry);return}
+      const im=new Image();let done=false;
+      const finish=ok=>{if(done)return;done=true;clearTimeout(timer);resolve(ok?entry:null)};
+      im.onload=()=>finish(true);im.onerror=()=>finish(false);
+      const timer=setTimeout(()=>finish(false),7000);
+      im.src=entry.url;
+    });
+  }
+  function fallbackPuzzleIllustration(category){
+    const a=PICTURE_ILLUSTRATIONS.filter(x=>x.category===category);
+    return a[Math.floor(activeRng()*a.length)]||PICTURE_ILLUSTRATIONS[0];
+  }
+
   function startPicturePuzzle(level){
     setHeader('Puzzle',LEVEL_NAMES[level]);
+    const prefs=readPuzzlePrefs(),session=sessionState('picturepuzzle',level);
+    const categoryOptions=[`<option value="all">Tutte le categorie</option>`,...PICTURE_CATEGORY_DEFS.map(x=>`<option value="${x.id}" ${prefs.category===x.id?'selected':''}>${x.label}</option>`)].join('');
+    app.innerHTML=gameShell('picturepuzzle',level,`
+      <div class="puzzle-setup tablet-card">
+        <div class="puzzle-setup-copy">
+          <span class="puzzle-kicker">PUZZLE 2.0 · SESSIONE ${session.session}/100</span>
+          <h2>Scegli il tuo puzzle</h2>
+          <p><b>108 fotografie</b> e <b>36 illustrazioni</b>, con memoria anti-ripetizione. Sul tablet l’area di gioco sfrutta lo spazio orizzontale; sul telefono si ricompone in verticale.</p>
+        </div>
+        <div class="puzzle-filter-grid">
+          <fieldset><legend>Immagini</legend>
+            <div class="puzzle-segment" data-pref="type">
+              ${Object.entries(PICTURE_TYPE_LABELS).map(([id,l])=>`<button type="button" data-value="${id}" class="${prefs.type===id?'active':''}">${l}</button>`).join('')}
+            </div>
+          </fieldset>
+          <fieldset><legend>Categoria</legend><select id="puzzleCategory">${categoryOptions}</select></fieldset>
+          <fieldset class="puzzle-mode-field"><legend>Forma delle tessere</legend>
+            <div class="puzzle-mode-grid">
+              ${Object.entries(PICTURE_MODE_LABELS).map(([id,l])=>`<button type="button" data-mode="${id}" class="${prefs.mode===id?'active':''}"><b>${id==='classic'?'▦':id==='mosaic'?'▥':id==='shaped'?'⬡':'✦'}</b><span>${l}</span><small>${id==='auto'?'Cambia con il livello':id==='classic'?'Griglia regolare':id==='mosaic'?'Dimensioni diverse':'Profili irregolari'}</small></button>`).join('')}
+            </div>
+          </fieldset>
+        </div>
+        <div class="puzzle-library-note"><span>📷 108 foto</span><span>🎨 36 illustrazioni</span><span>↻ ultime 30 escluse</span><span>▣ ottimizzato tablet</span></div>
+        <button id="puzzleStart" class="primary wide puzzle-start-btn">Crea il puzzle</button>
+        <small class="puzzle-photo-note">Le fotografie Creative Commons sono fornite da LoremFlickr/Flickr e richiedono una connessione al primo caricamento. Se la rete non è disponibile viene usata un’illustrazione locale.</small>
+      </div>
+    `);
+    let current={...prefs};
+    document.querySelectorAll('.puzzle-segment button').forEach(b=>b.onclick=()=>{
+      current.type=b.dataset.value;document.querySelectorAll('.puzzle-segment button').forEach(x=>x.classList.toggle('active',x===b));savePuzzlePrefs(current)
+    });
+    document.getElementById('puzzleCategory').onchange=e=>{current.category=e.target.value;savePuzzlePrefs(current)};
+    document.querySelectorAll('.puzzle-mode-grid button').forEach(b=>b.onclick=()=>{
+      current.mode=b.dataset.mode;document.querySelectorAll('.puzzle-mode-grid button').forEach(x=>x.classList.toggle('active',x===b));savePuzzlePrefs(current)
+    });
+    document.getElementById('puzzleStart').onclick=async e=>{
+      const btn=e.currentTarget;btn.disabled=true;btn.textContent='Preparo il puzzle…';
+      savePuzzlePrefs(current);
+      let pic=choosePuzzleImage(current);
+      const loaded=await preloadPuzzleImage(pic);
+      if(!loaded){pic=fallbackPuzzleIllustration(current.category==='all'?PICTURE_CATEGORY_DEFS[Math.floor(activeRng()*PICTURE_CATEGORY_DEFS.length)].id:current.category);toast('Foto non disponibile: uso un’illustrazione locale')}
+      rememberPuzzleImage(pic.id);
+      launchPicturePuzzle(level,pic,resolvePuzzleMode(level,current.mode));
+    };
+  }
+
+  function shufflePuzzleIds(n){
+    const a=Array.from({length:n},(_,i)=>i);
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(activeRng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+    if(a.length>1&&a.every((v,i)=>v===i))[a[0],a[1]]=[a[1],a[0]];
+    return a;
+  }
+  function puzzleCropStyle(region){
+    const x=region.x,y=region.y,w=region.w,h=region.h;
+    const sx=(100/Math.max(.001,w)).toFixed(3),sy=(100/Math.max(.001,h)).toFixed(3);
+    const px=(x<=0||w>=1)?0:(x/(1-w)*100);
+    const py=(y<=0||h>=1)?0:(y/(1-h)*100);
+    return `background-size:${sx}% ${sy}%;background-position:${px.toFixed(3)}% ${py.toFixed(3)}%`;
+  }
+  function gridRegions(n){
+    const out=[];for(let r=0;r<n;r++)for(let c=0;c<n;c++)out.push({x:c/n,y:r/n,w:1/n,h:1/n,row:r,col:c});
+    return out;
+  }
+  function mosaicRegions(count){
+    const regions=[{x:0,y:0,w:1,h:1}];
+    while(regions.length<count){
+      let idx=0,best=-1;
+      regions.forEach((r,i)=>{const a=r.w*r.h;if(a>best){best=a;idx=i}});
+      const r=regions.splice(idx,1)[0];
+      let vertical=r.w/r.h>1.25?true:r.h/r.w>1.25?false:activeRng()<.5;
+      const ratio=.39+activeRng()*.22;
+      if(vertical){
+        regions.push({x:r.x,y:r.y,w:r.w*ratio,h:r.h},{x:r.x+r.w*ratio,y:r.y,w:r.w*(1-ratio),h:r.h});
+      }else{
+        regions.push({x:r.x,y:r.y,w:r.w,h:r.h*ratio},{x:r.x,y:r.y+r.h*ratio,w:r.w,h:r.h*(1-ratio)});
+      }
+    }
+    return regions.sort((a,b)=>a.y-b.y||a.x-b.x);
+  }
+  const SHAPES=[
+    'polygon(4% 8%,88% 2%,98% 44%,92% 94%,49% 98%,3% 87%,0 42%)',
+    'polygon(7% 0,96% 8%,91% 42%,100% 92%,54% 96%,8% 100%,0 55%)',
+    'polygon(0 10%,47% 2%,96% 0,100% 54%,90% 100%,44% 94%,5% 100%)',
+    'polygon(10% 3%,90% 0,100% 38%,94% 91%,62% 100%,4% 92%,0 43%)',
+    'polygon(0 5%,43% 0,100% 9%,94% 53%,100% 94%,51% 100%,6% 91%)',
+    'polygon(6% 6%,92% 0,100% 48%,91% 100%,50% 94%,0 100%,5% 47%)'
+  ];
+
+  function launchPicturePuzzle(level,pic,mode){
     const cfg=PICTURE_PUZZLE_CONFIG[level];
-    const pic=PICTURE_PUZZLE_IMAGES[Math.floor(activeRng()*PICTURE_PUZZLE_IMAGES.length)];
-    const ids=shufflePuzzleIds(cfg.size);
+    if(mode==='classic')launchClassicPicturePuzzle(level,pic,cfg);
+    else launchPlacementPicturePuzzle(level,pic,cfg,mode);
+  }
+
+  function puzzlePlayHeader(level,pic,mode,movesId){
+    const cat=PICTURE_CATEGORY_DEFS.find(x=>x.id===pic.category)?.label||'Immagine';
+    return `<div class="classic-mini-head puzzle-mini-head">
+      <div><span>PUZZLE · ${PICTURE_MODE_LABELS[mode].toUpperCase()}</span><b>${esc(cat)} · ${esc(pic.type==='photo'?'Fotografia':'Illustrazione')}</b></div>
+      <div class="classic-mini-stat"><small>MOSSE</small><strong id="${movesId}">0</strong></div>
+    </div>`;
+  }
+
+  function launchClassicPicturePuzzle(level,pic,cfg){
+    const count=cfg.size*cfg.size,ids=shufflePuzzleIds(count);
     let selected=null,moves=0,hints=cfg.hints,finished=false;
     app.innerHTML=gameShell('picturepuzzle',level,`
-      <div class="classic-mini-head"><div><span>PUZZLE A IMMAGINE</span><b>${cfg.label} · ${esc(pic[1])}</b></div><div class="classic-mini-stat"><small>SCAMBI</small><strong id="picMoves">0</strong></div></div>
-      <div class="picture-puzzle-layout">
-        <div class="picture-reference"><small>IMMAGINE COMPLETA</small><img src="${pic[0]}" alt="Immagine completa di riferimento: ${esc(pic[1])}"></div>
-        <div id="pictureBoard" class="picture-board" style="--puzzle-n:${cfg.size};--puzzle-img:url('${pic[0]}')" aria-label="Puzzle ${cfg.size} per ${cfg.size}"></div>
+      ${puzzlePlayHeader(level,pic,'classic','picMoves')}
+      <div class="picture-puzzle-layout puzzle-tablet-play">
+        <aside class="picture-reference"><small>IMMAGINE COMPLETA</small><img src="${pic.url}" alt="Immagine completa di riferimento: ${esc(pic.label)}"><span>${esc(pic.label)}</span></aside>
+        <div id="pictureBoard" class="picture-board" style="--puzzle-n:${cfg.size};--puzzle-img:url('${pic.url.replace(/'/g,"%27")}')" aria-label="Puzzle ${cfg.size} per ${cfg.size}"></div>
       </div>
       <div class="actions picture-actions">
         <button id="pictureHint" class="secondary" ${hints?'':'disabled'}>💡 Suggerimento (${hints})</button>
@@ -879,41 +1091,106 @@
     const board=document.getElementById('pictureBoard'),hint=document.getElementById('pictureHint'),cancel=document.getElementById('pictureResetSelection'),msg=document.getElementById('pictureMsg');
     function isSolved(){return ids.every((v,i)=>v===i)}
     function render(){
-      const n=cfg.size;
+      const n=cfg.size,regions=gridRegions(n);
       board.innerHTML=ids.map((tile,pos)=>{
-        const x=tile%n,y=Math.floor(tile/n),px=n===1?0:x/(n-1)*100,py=n===1?0:y/(n-1)*100;
-        const correct=tile===pos;
-        return `<button class="picture-piece ${selected===pos?'selected':''} ${cfg.mark&&correct?'correct':''}" data-pos="${pos}" style="background-size:${n*100}% ${n*100}%;background-position:${px}% ${py}%" aria-label="Tessera ${pos+1}"></button>`;
+        const region=regions[tile],correct=tile===pos;
+        return `<button class="picture-piece ${selected===pos?'selected':''} ${cfg.mark&&correct?'correct':''}" data-pos="${pos}" style="${puzzleCropStyle(region)}" aria-label="Tessera ${pos+1}"></button>`;
       }).join('');
       board.querySelectorAll('button').forEach(b=>b.onclick=()=>selectPiece(+b.dataset.pos));
-      document.getElementById('picMoves').textContent=moves;
-      cancel.disabled=selected===null;
-      hint.disabled=!hints;
-      hint.textContent=`💡 Suggerimento (${hints})`;
+      document.getElementById('picMoves').textContent=moves;cancel.disabled=selected===null;hint.disabled=!hints;hint.textContent=`💡 Suggerimento (${hints})`;
     }
     function selectPiece(pos){
       if(finished)return;
       if(selected===null){selected=pos;msg.textContent='Prima tessera selezionata. Ora scegli quella con cui scambiarla.';render();return}
       if(selected===pos){selected=null;msg.textContent='Selezione annullata.';render();return}
-      [ids[selected],ids[pos]]=[ids[pos],ids[selected]];
-      selected=null;moves++;render();
+      [ids[selected],ids[pos]]=[ids[pos],ids[selected]];selected=null;moves++;render();
       if(isSolved())win();else msg.textContent='Scambio effettuato. Continua a ricomporre l’immagine.';
     }
     cancel.onclick=()=>{selected=null;render();msg.textContent='Selezione annullata.'};
     hint.onclick=()=>{
       if(!hints||finished)return;
       const wrong=ids.findIndex((v,i)=>v!==i);if(wrong<0)return;
-      const targetPos=ids.indexOf(wrong);
-      [ids[wrong],ids[targetPos]]=[ids[targetPos],ids[wrong]];
-      hints--;moves++;selected=null;render();
-      msg.innerHTML=`Una tessera è stata rimessa nella posizione corretta.`;
-      if(isSolved())win();
+      const targetPos=ids.indexOf(wrong);[ids[wrong],ids[targetPos]]=[ids[targetPos],ids[wrong]];
+      hints--;moves++;selected=null;render();msg.textContent='Una tessera è stata rimessa nella posizione corretta.';if(isSolved())win();
     };
     function win(){
-      finished=true;const sec=Math.floor((Date.now()-activeStart)/1000);
-      const score=Math.max(100,2000-moves*10-sec*2-(cfg.hints-hints)*45);
+      finished=true;const sec=Math.floor((Date.now()-activeStart)/1000),score=Math.max(100,2100-moves*10-sec*2-(cfg.hints-hints)*45);
       msg.innerHTML=`<b>Immagine ricomposta.</b> ${moves} scambi.`;
-      setTimeout(()=>concludeSession('picturepuzzle',level,score,true,`Puzzle completato in <b>${moves}</b> scambi. Punteggio: <b>${score}</b>.`),650);
+      setTimeout(()=>concludeSession('picturepuzzle',level,score,true,`Puzzle ${esc(PICTURE_MODE_LABELS.classic)} completato in <b>${moves}</b> scambi. Punteggio: <b>${score}</b>.`),650);
+    }
+    render();startTimer();
+  }
+
+  function launchPlacementPicturePuzzle(level,pic,cfg,mode){
+    const regions=mode==='mosaic'?mosaicRegions(cfg.mosaicCount):gridRegions(cfg.size);
+    const order=shufflePuzzleIds(regions.length),placed=new Set();
+    let selected=null,moves=0,hints=cfg.hints,finished=false,lastPlaced=null;
+    app.innerHTML=gameShell('picturepuzzle',level,`
+      ${puzzlePlayHeader(level,pic,mode,'picMoves')}
+      <div class="puzzle-placement-layout" style="--puzzle-img:url(\'${pic.url.replace(/\'/g,"%27")}\')">
+        <section class="puzzle-stage-column">
+          <div class="picture-reference compact-ref"><small>RIFERIMENTO</small><img src="${pic.url}" alt="Immagine completa: ${esc(pic.label)}"><span>${esc(pic.label)}</span></div>
+          <div id="puzzleTarget" class="puzzle-target-board ${mode}" style="--puzzle-img:url('${pic.url.replace(/'/g,"%27")}')" aria-label="Quadro da ricostruire"></div>
+        </section>
+        <aside class="puzzle-tray-panel">
+          <div class="puzzle-tray-title"><div><small>PEZZI DA COLLOCARE</small><b id="puzzleLeft">${regions.length}</b></div><span>Tocca un pezzo, poi il suo posto nel quadro.</span></div>
+          <div id="puzzleTray" class="puzzle-tray ${mode}"></div>
+        </aside>
+      </div>
+      <div class="actions picture-actions">
+        <button id="pictureHint" class="secondary" ${hints?'':'disabled'}>💡 Suggerimento (${hints})</button>
+        <button id="pictureUndo" class="secondary" disabled>↶ Rimuovi ultimo</button>
+      </div>
+      <div id="pictureMsg" class="message">Scegli un pezzo dal vassoio.</div>
+    `);
+    const target=document.getElementById('puzzleTarget'),tray=document.getElementById('puzzleTray'),hint=document.getElementById('pictureHint'),undo=document.getElementById('pictureUndo'),msg=document.getElementById('pictureMsg');
+    function regionStyle(r,i,slot=false){
+      const shape=mode==='shaped'?SHAPES[(i*3+i%5)%SHAPES.length]:'none';
+      return `left:${(r.x*100).toFixed(4)}%;top:${(r.y*100).toFixed(4)}%;width:${(r.w*100).toFixed(4)}%;height:${(r.h*100).toFixed(4)}%;${mode==='shaped'?`clip-path:${shape};`:''}`;
+    }
+    function pieceThumbStyle(r,i){
+      const ratio=(r.w/r.h).toFixed(3),shape=mode==='shaped'?SHAPES[(i*3+i%5)%SHAPES.length]:'none';
+      const area=r.w*r.h,base=Math.max(74,Math.min(150,82+area*650));
+      return `--piece-w:${base.toFixed(0)}px;--piece-ratio:${ratio};${puzzleCropStyle(r)};${mode==='shaped'?`clip-path:${shape};`:''}`;
+    }
+    function render(){
+      target.innerHTML=regions.map((r,i)=>`<button class="puzzle-target-slot ${placed.has(i)?'filled':''} ${selected===i?'wanted':''}" data-slot="${i}" style="${regionStyle(r,i,true)}" aria-label="Posizione ${i+1}">${placed.has(i)?`<i class="placed-image" style="${puzzleCropStyle(r)}"></i>`:''}</button>`).join('');
+      target.querySelectorAll('.puzzle-target-slot').forEach(b=>b.onclick=()=>tryPlace(+b.dataset.slot));
+      tray.innerHTML=order.filter(i=>!placed.has(i)).map(i=>`<button class="puzzle-tray-piece ${selected===i?'selected':''}" data-piece="${i}" style="${pieceThumbStyle(regions[i],i)}" aria-label="Pezzo ${i+1}"></button>`).join('');
+      tray.querySelectorAll('.puzzle-tray-piece').forEach(b=>b.onclick=()=>{
+        const i=+b.dataset.piece;selected=selected===i?null:i;render();msg.textContent=selected===null?'Selezione annullata.':'Pezzo selezionato: ora tocca il punto del quadro in cui va collocato.';
+      });
+      document.getElementById('picMoves').textContent=moves;document.getElementById('puzzleLeft').textContent=regions.length-placed.size;
+      hint.disabled=!hints||finished;hint.textContent=`💡 Suggerimento (${hints})`;undo.disabled=lastPlaced===null||finished;
+    }
+    function tryPlace(slot){
+      if(finished||selected===null)return toast('Prima scegli un pezzo dal vassoio');
+      moves++;
+      if(slot===selected){
+        placed.add(selected);lastPlaced=selected;selected=null;msg.innerHTML='<b>Aggancio corretto.</b> Il pezzo resta al suo posto.';render();
+        if(placed.size===regions.length)win();
+      }else{
+        msg.textContent='Non combacia in quel punto. Il pezzo torna nel vassoio.';target.querySelector(`[data-slot="${slot}"]`)?.classList.add('wrong');
+        setTimeout(()=>target.querySelector(`[data-slot="${slot}"]`)?.classList.remove('wrong'),480);
+        render();
+      }
+    }
+    hint.onclick=()=>{
+      if(!hints||finished)return;
+      const candidate=selected!==null?selected:order.find(i=>!placed.has(i));
+      if(candidate===undefined)return;
+      placed.add(candidate);lastPlaced=candidate;selected=null;hints--;moves++;render();msg.textContent='Un pezzo è stato agganciato nella posizione corretta.';
+      if(placed.size===regions.length)win();
+    };
+    undo.onclick=()=>{
+      if(lastPlaced===null||finished)return;
+      placed.delete(lastPlaced);selected=lastPlaced;lastPlaced=null;moves++;render();msg.textContent='Ultimo pezzo rimosso: è di nuovo selezionato nel vassoio.';
+    };
+    function win(){
+      finished=true;render();const sec=Math.floor((Date.now()-activeStart)/1000);
+      const score=Math.max(120,2300-moves*8-sec*2-(cfg.hints-hints)*50);
+      msg.innerHTML=`<b>Puzzle completato.</b> ${moves} mosse.`;
+      setTimeout(()=>concludeSession('picturepuzzle',level,score,true,`Puzzle ${esc(PICTURE_MODE_LABELS[mode])} completato in <b>${moves}</b> mosse. Punteggio: <b>${score}</b>.`),700);
     }
     render();startTimer();
   }
