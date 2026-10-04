@@ -1,10 +1,10 @@
 'use strict';
 
 /* Sala Giochi 2.0 — navigazione a famiglie + giochi Nuova generazione
-   v2.10.0: tablet-first globale + Puzzle 2.0 con 100+ fotografie, filtri, anti-ripetizione e tessere variabili. */
+   v2.10.2: Puzzle ripristinato con riferimento separato ingrandibile e tessere disordinate direttamente nel quadro. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.10.1';
+  const NEXTGEN_VERSION = '2.10.2';
 
   GAME_NAMES.fifteen = 'Gioco del 15';
   GAME_NAMES.picturepuzzle = 'Puzzle';
@@ -59,13 +59,13 @@
     steps: [
       'Prima di iniziare scegli il tipo di immagini, la categoria e la modalità delle tessere.',
       'Classico usa una griglia regolare; Mosaico usa pezzi rettangolari di dimensioni diverse; Sagomato usa pezzi irregolari.',
-      'Nel Classico tocca due tessere per scambiarle. In Mosaico e Sagomato seleziona un pezzo dal vassoio e poi il punto del quadro in cui pensi vada collocato.',
+      'In tutte le modalità il quadro contiene già tutte le tessere, disordinate: tocca due pezzi per scambiarli.',
       'Il gioco ricorda le immagini usate di recente e cerca di non riproporle nelle sessioni successive.'
     ],
     tips: [
-      'Sul tablet il puzzle sfrutta lo spazio orizzontale con immagine di riferimento, quadro e vassoio affiancati.',
+      'Sul tablet l’immagine di riferimento resta separata dal quadro; toccala per ingrandirla a tutto schermo.',
       'Le fotografie vengono caricate dalla rete la prima volta e poi possono restare nella cache del dispositivo.',
-      'Se una fotografia non è disponibile, il gioco passa automaticamente a un’illustrazione locale.'
+      'La foto di riferimento non viene mai usata come sfondo del campo di ricostruzione.'
     ]
   };
 
@@ -1051,8 +1051,7 @@
 
   function launchPicturePuzzle(level,pic,mode){
     const cfg=PICTURE_PUZZLE_CONFIG[level];
-    if(mode==='classic')launchClassicPicturePuzzle(level,pic,cfg);
-    else launchPlacementPicturePuzzle(level,pic,cfg,mode);
+    launchSwapPicturePuzzle(level,pic,cfg,mode);
   }
 
   function puzzleCredit(pic){
@@ -1067,35 +1066,78 @@
     const cat=PICTURE_CATEGORY_DEFS.find(x=>x.id===pic.category)?.label||'Immagine';
     return `<div class="classic-mini-head puzzle-mini-head">
       <div><span>PUZZLE · ${PICTURE_MODE_LABELS[mode].toUpperCase()}</span><b>${esc(cat)} · ${esc(pic.type==='photo'?'Fotografia':'Illustrazione')}</b></div>
-      <div class="classic-mini-stat"><small>MOSSE</small><strong id="${movesId}">0</strong></div>
+      <div class="classic-mini-stat"><small>SCAMBI</small><strong id="${movesId}">0</strong></div>
     </div>`;
   }
 
-  function launchClassicPicturePuzzle(level,pic,cfg){
-    const count=cfg.size*cfg.size,ids=shufflePuzzleIds(count);
+  function puzzleReferenceBlock(pic){
+    return `<aside class="picture-reference puzzle-reference-separated">
+      <small>IMMAGINE COMPLETA</small>
+      <button id="puzzleRefOpen" class="puzzle-reference-button" type="button" aria-label="Ingrandisci immagine di riferimento">
+        <img src="${pic.url}" alt="Immagine completa di riferimento: ${esc(pic.label)}">
+        <span class="puzzle-ref-magnify">⛶ Ingrandisci</span>
+      </button>
+      <span class="puzzle-reference-label">${esc(pic.label)}</span>
+      ${puzzleCredit(pic)}
+    </aside>`;
+  }
+
+  function puzzleReferenceZoom(pic){
+    return `<div id="puzzleRefZoom" class="puzzle-ref-zoom" hidden role="dialog" aria-modal="true" aria-label="Immagine di riferimento ingrandita">
+      <button id="puzzleRefClose" class="puzzle-ref-close" type="button" aria-label="Chiudi immagine">×</button>
+      <img src="${pic.url}" alt="Immagine di riferimento ingrandita: ${esc(pic.label)}">
+      <div><b>${esc(pic.label)}</b><small>Tocca × o lo sfondo per tornare al puzzle</small></div>
+    </div>`;
+  }
+
+  function wirePuzzleReferenceZoom(){
+    const open=document.getElementById('puzzleRefOpen'),zoom=document.getElementById('puzzleRefZoom'),close=document.getElementById('puzzleRefClose');
+    if(!open||!zoom)return;
+    const set=v=>{zoom.hidden=!v;document.body.classList.toggle('puzzle-ref-open',v)};
+    open.onclick=()=>set(true);
+    close&&(close.onclick=()=>set(false));
+    zoom.onclick=e=>{if(e.target===zoom)set(false)};
+  }
+
+  function launchSwapPicturePuzzle(level,pic,cfg,mode){
+    const regions=mode==='mosaic'?mosaicRegions(cfg.mosaicCount):gridRegions(cfg.size);
+    const ids=shufflePuzzleIds(regions.length);
     let selected=null,moves=0,hints=cfg.hints,finished=false;
     app.innerHTML=gameShell('picturepuzzle',level,`
-      ${puzzlePlayHeader(level,pic,'classic','picMoves')}
-      <div class="picture-puzzle-layout puzzle-tablet-play">
-        <aside class="picture-reference"><small>IMMAGINE COMPLETA</small><img src="${pic.url}" alt="Immagine completa di riferimento: ${esc(pic.label)}"><span>${esc(pic.label)}</span>${puzzleCredit(pic)}</aside>
-        <div id="pictureBoard" class="picture-board" style="--puzzle-n:${cfg.size};--puzzle-img:url('${pic.url.replace(/'/g,"%27")}')" aria-label="Puzzle ${cfg.size} per ${cfg.size}"></div>
+      ${puzzlePlayHeader(level,pic,mode,'picMoves')}
+      <div class="picture-puzzle-layout puzzle-tablet-play puzzle-swap-layout">
+        ${puzzleReferenceBlock(pic)}
+        <div id="pictureBoard" class="picture-board puzzle-variable-board mode-${mode}" style="--puzzle-img:url('${pic.url.replace(/'/g,"%27")}')" aria-label="Puzzle da ricomporre"></div>
       </div>
       <div class="actions picture-actions">
         <button id="pictureHint" class="secondary" ${hints?'':'disabled'}>💡 Suggerimento (${hints})</button>
         <button id="pictureResetSelection" class="secondary" disabled>Annulla selezione</button>
       </div>
-      <div id="pictureMsg" class="message">Tocca due tessere per scambiarle.</div>
+      <div id="pictureMsg" class="message">Le tessere sono già tutte nel quadro, ma disordinate. Tocca due pezzi per scambiarli.</div>
+      ${puzzleReferenceZoom(pic)}
     `);
     const board=document.getElementById('pictureBoard'),hint=document.getElementById('pictureHint'),cancel=document.getElementById('pictureResetSelection'),msg=document.getElementById('pictureMsg');
+    wirePuzzleReferenceZoom();
     function isSolved(){return ids.every((v,i)=>v===i)}
+    function targetStyle(region,i){
+      const shape=mode==='shaped'?SHAPES[(i*3+i%5)%SHAPES.length]:'none';
+      if(mode==='classic'||mode==='shaped'){
+        const n=cfg.size,row=Math.floor(i/n),col=i%n;
+        return `left:${(col/n*100).toFixed(4)}%;top:${(row/n*100).toFixed(4)}%;width:${(100/n).toFixed(4)}%;height:${(100/n).toFixed(4)}%;${mode==='shaped'?`clip-path:${shape};`:''}`;
+      }
+      return `left:${(region.x*100).toFixed(4)}%;top:${(region.y*100).toFixed(4)}%;width:${(region.w*100).toFixed(4)}%;height:${(region.h*100).toFixed(4)}%;`;
+    }
     function render(){
-      const n=cfg.size,regions=gridRegions(n);
-      board.innerHTML=ids.map((tile,pos)=>{
-        const region=regions[tile],correct=tile===pos;
-        return `<button class="picture-piece ${selected===pos?'selected':''} ${cfg.mark&&correct?'correct':''}" data-pos="${pos}" style="${puzzleCropStyle(region)}" aria-label="Tessera ${pos+1}"></button>`;
+      board.innerHTML=ids.map((piece,pos)=>{
+        const target=regions[pos],source=regions[piece],correct=piece===pos;
+        const sourceShape=mode==='shaped'?SHAPES[(piece*3+piece%5)%SHAPES.length]:'none';
+        return `<button class="picture-piece puzzle-free-piece ${selected===pos?'selected':''} ${cfg.mark&&correct?'correct':''}" data-pos="${pos}" style="${targetStyle(target,pos)};${puzzleCropStyle(source)};${mode==='shaped'?`clip-path:${sourceShape};`:''}" aria-label="Tessera ${pos+1}"></button>`;
       }).join('');
       board.querySelectorAll('button').forEach(b=>b.onclick=()=>selectPiece(+b.dataset.pos));
-      document.getElementById('picMoves').textContent=moves;cancel.disabled=selected===null;hint.disabled=!hints;hint.textContent=`💡 Suggerimento (${hints})`;
+      document.getElementById('picMoves').textContent=moves;
+      cancel.disabled=selected===null;
+      hint.disabled=!hints||finished;
+      hint.textContent=`💡 Suggerimento (${hints})`;
     }
     function selectPiece(pos){
       if(finished)return;
@@ -1112,83 +1154,9 @@
       hints--;moves++;selected=null;render();msg.textContent='Una tessera è stata rimessa nella posizione corretta.';if(isSolved())win();
     };
     function win(){
-      finished=true;const sec=Math.floor((Date.now()-activeStart)/1000),score=Math.max(100,2100-moves*10-sec*2-(cfg.hints-hints)*45);
+      finished=true;render();const sec=Math.floor((Date.now()-activeStart)/1000),score=Math.max(100,2200-moves*9-sec*2-(cfg.hints-hints)*45);
       msg.innerHTML=`<b>Immagine ricomposta.</b> ${moves} scambi.`;
-      setTimeout(()=>concludeSession('picturepuzzle',level,score,true,`Puzzle ${esc(PICTURE_MODE_LABELS.classic)} completato in <b>${moves}</b> scambi. Punteggio: <b>${score}</b>.`),650);
-    }
-    render();startTimer();
-  }
-
-  function launchPlacementPicturePuzzle(level,pic,cfg,mode){
-    const regions=mode==='mosaic'?mosaicRegions(cfg.mosaicCount):gridRegions(cfg.size);
-    const order=shufflePuzzleIds(regions.length),placed=new Set();
-    let selected=null,moves=0,hints=cfg.hints,finished=false,lastPlaced=null;
-    app.innerHTML=gameShell('picturepuzzle',level,`
-      ${puzzlePlayHeader(level,pic,mode,'picMoves')}
-      <div class="puzzle-placement-layout" style="--puzzle-img:url(\'${pic.url.replace(/\'/g,"%27")}\')">
-        <section class="puzzle-stage-column">
-          <div class="picture-reference compact-ref"><small>RIFERIMENTO</small><img src="${pic.url}" alt="Immagine completa: ${esc(pic.label)}"><span>${esc(pic.label)}</span>${puzzleCredit(pic)}</div>
-          <div id="puzzleTarget" class="puzzle-target-board ${mode}" style="--puzzle-img:url('${pic.url.replace(/'/g,"%27")}')" aria-label="Quadro da ricostruire"></div>
-        </section>
-        <aside class="puzzle-tray-panel">
-          <div class="puzzle-tray-title"><div><small>PEZZI DA COLLOCARE</small><b id="puzzleLeft">${regions.length}</b></div><span>Tocca un pezzo, poi il suo posto nel quadro.</span></div>
-          <div id="puzzleTray" class="puzzle-tray ${mode}"></div>
-        </aside>
-      </div>
-      <div class="actions picture-actions">
-        <button id="pictureHint" class="secondary" ${hints?'':'disabled'}>💡 Suggerimento (${hints})</button>
-        <button id="pictureUndo" class="secondary" disabled>↶ Rimuovi ultimo</button>
-      </div>
-      <div id="pictureMsg" class="message">Scegli un pezzo dal vassoio.</div>
-    `);
-    const target=document.getElementById('puzzleTarget'),tray=document.getElementById('puzzleTray'),hint=document.getElementById('pictureHint'),undo=document.getElementById('pictureUndo'),msg=document.getElementById('pictureMsg');
-    function regionStyle(r,i,slot=false){
-      const shape=mode==='shaped'?SHAPES[(i*3+i%5)%SHAPES.length]:'none';
-      return `left:${(r.x*100).toFixed(4)}%;top:${(r.y*100).toFixed(4)}%;width:${(r.w*100).toFixed(4)}%;height:${(r.h*100).toFixed(4)}%;${mode==='shaped'?`clip-path:${shape};`:''}`;
-    }
-    function pieceThumbStyle(r,i){
-      const ratio=(r.w/r.h).toFixed(3),shape=mode==='shaped'?SHAPES[(i*3+i%5)%SHAPES.length]:'none';
-      const area=r.w*r.h,base=Math.max(74,Math.min(150,82+area*650));
-      return `--piece-w:${base.toFixed(0)}px;--piece-ratio:${ratio};${puzzleCropStyle(r)};${mode==='shaped'?`clip-path:${shape};`:''}`;
-    }
-    function render(){
-      target.innerHTML=regions.map((r,i)=>`<button class="puzzle-target-slot ${placed.has(i)?'filled':''} ${selected===i?'wanted':''}" data-slot="${i}" style="${regionStyle(r,i,true)}" aria-label="Posizione ${i+1}">${placed.has(i)?`<i class="placed-image" style="${puzzleCropStyle(r)}"></i>`:''}</button>`).join('');
-      target.querySelectorAll('.puzzle-target-slot').forEach(b=>b.onclick=()=>tryPlace(+b.dataset.slot));
-      tray.innerHTML=order.filter(i=>!placed.has(i)).map(i=>`<button class="puzzle-tray-piece ${selected===i?'selected':''}" data-piece="${i}" style="${pieceThumbStyle(regions[i],i)}" aria-label="Pezzo ${i+1}"></button>`).join('');
-      tray.querySelectorAll('.puzzle-tray-piece').forEach(b=>b.onclick=()=>{
-        const i=+b.dataset.piece;selected=selected===i?null:i;render();msg.textContent=selected===null?'Selezione annullata.':'Pezzo selezionato: ora tocca il punto del quadro in cui va collocato.';
-      });
-      document.getElementById('picMoves').textContent=moves;document.getElementById('puzzleLeft').textContent=regions.length-placed.size;
-      hint.disabled=!hints||finished;hint.textContent=`💡 Suggerimento (${hints})`;undo.disabled=lastPlaced===null||finished;
-    }
-    function tryPlace(slot){
-      if(finished||selected===null)return toast('Prima scegli un pezzo dal vassoio');
-      moves++;
-      if(slot===selected){
-        placed.add(selected);lastPlaced=selected;selected=null;msg.innerHTML='<b>Aggancio corretto.</b> Il pezzo resta al suo posto.';render();
-        if(placed.size===regions.length)win();
-      }else{
-        msg.textContent='Non combacia in quel punto. Il pezzo torna nel vassoio.';target.querySelector(`[data-slot="${slot}"]`)?.classList.add('wrong');
-        setTimeout(()=>target.querySelector(`[data-slot="${slot}"]`)?.classList.remove('wrong'),480);
-        render();
-      }
-    }
-    hint.onclick=()=>{
-      if(!hints||finished)return;
-      const candidate=selected!==null?selected:order.find(i=>!placed.has(i));
-      if(candidate===undefined)return;
-      placed.add(candidate);lastPlaced=candidate;selected=null;hints--;moves++;render();msg.textContent='Un pezzo è stato agganciato nella posizione corretta.';
-      if(placed.size===regions.length)win();
-    };
-    undo.onclick=()=>{
-      if(lastPlaced===null||finished)return;
-      placed.delete(lastPlaced);selected=lastPlaced;lastPlaced=null;moves++;render();msg.textContent='Ultimo pezzo rimosso: è di nuovo selezionato nel vassoio.';
-    };
-    function win(){
-      finished=true;render();const sec=Math.floor((Date.now()-activeStart)/1000);
-      const score=Math.max(120,2300-moves*8-sec*2-(cfg.hints-hints)*50);
-      msg.innerHTML=`<b>Puzzle completato.</b> ${moves} mosse.`;
-      setTimeout(()=>concludeSession('picturepuzzle',level,score,true,`Puzzle ${esc(PICTURE_MODE_LABELS[mode])} completato in <b>${moves}</b> mosse. Punteggio: <b>${score}</b>.`),700);
+      setTimeout(()=>concludeSession('picturepuzzle',level,score,true,`Puzzle ${esc(PICTURE_MODE_LABELS[mode])} completato in <b>${moves}</b> scambi. Punteggio: <b>${score}</b>.`),650);
     }
     render();startTimer();
   }
