@@ -569,3 +569,8 @@ body.sg2-alibi-play{background:#0a090b}.game-alibi{max-width:1120px;margin:auto;
   body:not(.sg2-home):not(.sg2-family) .notes-dialog{max-width:920px}
   body:not(.sg2-home):not(.sg2-family) .difficulty-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* v2.10.1 — stato sorgente fotografica */
+.puzzle-source-status{margin:12px 0 4px;padding:11px 13px;border-radius:14px;background:rgba(43,94,126,.08);color:#31536a;font-size:.82rem;line-height:1.35;border:1px solid rgba(43,94,126,.12)}
+.puzzle-source-status.error{background:#fff1f1;color:#992f2f;border-color:#f1c6c6}
+.picture-reference .puzzle-credit{display:block;margin-top:7px;font-size:.7rem;color:var(--muted)}

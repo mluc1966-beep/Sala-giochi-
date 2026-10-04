@@ -4,7 +4,7 @@
    v2.10.0: tablet-first globale + Puzzle 2.0 con 100+ fotografie, filtri, anti-ripetizione e tessere variabili. */
 
 (() => {
-  const NEXTGEN_VERSION = '2.10.0';
+  const NEXTGEN_VERSION = '2.10.1';
 
   GAME_NAMES.fifteen = 'Gioco del 15';
   GAME_NAMES.picturepuzzle = 'Puzzle';
@@ -837,7 +837,7 @@
     render();startTimer();
   }
 
-  // ---------- PUZZLE 2.0 — TABLET FIRST ----------
+  // ---------- PUZZLE 2.1 — TABLET FIRST, FOTO REALI ----------
   const PICTURE_PUZZLE_CONFIG={
     easy:{size:3,hints:4,mark:true,mosaicCount:9,label:'9 pezzi'},
     medium:{size:4,hints:3,mark:true,mosaicCount:12,label:'12–16 pezzi'},
@@ -846,107 +846,62 @@
   };
 
   const PICTURE_CATEGORY_DEFS=[
-    {id:'natura',label:'Natura',query:'nature,landscape'},
-    {id:'citta',label:'Città',query:'city,street'},
-    {id:'animali',label:'Animali',query:'animals,wildlife'},
-    {id:'cibo',label:'Cibo',query:'food,cuisine'},
-    {id:'architettura',label:'Architettura',query:'architecture,building'},
-    {id:'mare',label:'Mare',query:'sea,coast'},
-    {id:'montagna',label:'Montagna',query:'mountain,alps'},
-    {id:'fiori',label:'Fiori',query:'flowers,garden'},
-    {id:'oggetti',label:'Oggetti',query:'objects,stilllife'}
+    {id:'natura',label:'Natura',icon:'🌿',search:'landscape nature photograph'},
+    {id:'citta',label:'Città',icon:'🏙️',search:'city street urban photograph'},
+    {id:'animali',label:'Animali',icon:'🐾',search:'wildlife animal photograph'},
+    {id:'cibo',label:'Cibo',icon:'🍽️',search:'food dish cuisine photograph'},
+    {id:'architettura',label:'Architettura',icon:'🏛️',search:'architecture building photograph'},
+    {id:'mare',label:'Mare',icon:'🌊',search:'sea coast beach photograph'},
+    {id:'montagna',label:'Montagna',icon:'⛰️',search:'mountain alps landscape photograph'},
+    {id:'fiori',label:'Fiori',icon:'🌸',search:'flower garden macro photograph'},
+    {id:'oggetti',label:'Oggetti',icon:'🫖',search:'still life object photograph'}
   ];
   const PICTURE_TYPE_LABELS={mixed:'Miste',photo:'Solo fotografie',illustration:'Solo illustrazioni'};
   const PICTURE_MODE_LABELS={auto:'Automatico',classic:'Classico',mosaic:'Mosaico',shaped:'Sagomato'};
-  const PICTURE_PREF_KEY='sg2_picture_prefs_v3';
-  const PICTURE_RECENT_KEY='sg2_picture_recent_v3';
-
-  function puzzlePhotoUrl(cat,index){
-    const ci=PICTURE_CATEGORY_DEFS.findIndex(x=>x.id===cat.id);
-    const lock=33001+ci*100+index;
-    return `https://loremflickr.com/1200/800/${cat.query}?lock=${lock}`;
-  }
-  const PICTURE_PHOTOS=PICTURE_CATEGORY_DEFS.flatMap(cat=>
-    Array.from({length:12},(_,i)=>({
-      id:`photo-${cat.id}-${i+1}`,type:'photo',category:cat.id,
-      label:`${cat.label} · fotografia ${i+1}`,url:puzzlePhotoUrl(cat,i+1)
-    }))
-  );
+  const PICTURE_PREF_KEY='sg2_picture_prefs_v4';
+  const PICTURE_RECENT_KEY='sg2_picture_recent_v4';
+  const PICTURE_COMMONS_CACHE_PREFIX='sg2_commons_photos_v2_';
+  const PICTURE_COMMONS_CACHE_MS=1000*60*60*24*30;
 
   function pictureIllustrationSvg(cat,index){
     const palettes={
-      natura:['#163c35','#4f9d69','#e2c96b','#dff3dc'],
-      citta:['#14213d','#3a86ff','#ffbe0b','#edf2f4'],
-      animali:['#352f44','#b56576','#eaac8b','#ffe8d6'],
-      cibo:['#5f0f40','#9a031e','#fb8b24','#fff3b0'],
-      architettura:['#1b263b','#415a77','#e0e1dd','#fca311'],
-      mare:['#023e8a','#0096c7','#48cae4','#caf0f8'],
-      montagna:['#243b4a','#5c6f68','#a4c3b2','#eaf4f4'],
-      fiori:['#5a189a','#c77dff','#ff85a1','#fff0f3'],
-      oggetti:['#2b2d42','#8d99ae','#ef233c','#edf2f4']
+      natura:['#143d2f','#4f9d69','#9bcf8f','#e8f5df'],citta:['#17233f','#4464ad','#d8a84e','#eef2f7'],
+      animali:['#44352d','#9b6b43','#d6b07a','#f7ead8'],cibo:['#6e2636','#c5503d','#efa34a','#fff0c9'],
+      architettura:['#24344d','#66788f','#d6c3a5','#f4efe6'],mare:['#064b77','#168aad','#76c9df','#e4f8ff'],
+      montagna:['#263b46','#61776e','#b7cfbf','#eef5ef'],fiori:['#67238c','#d55e9f','#ff9eba','#fff1f6'],
+      oggetti:['#313745','#75808d','#cc7a4d','#f0eadf']
     };
-    const p=palettes[cat]||palettes.natura;
-    const seed=index+PICTURE_CATEGORY_DEFS.findIndex(x=>x.id===cat)*7;
-    const circles=Array.from({length:9},(_,i)=>{
-      const x=70+((seed*53+i*97)%1060),y=70+((seed*71+i*61)%650),r=28+((seed*29+i*41)%92);
-      return `<circle cx="${x}" cy="${y}" r="${r}" fill="${p[i%p.length]}" opacity="${.18+(i%4)*.13}"/>`;
-    }).join('');
-    const bars=Array.from({length:6},(_,i)=>{
-      const x=(seed*37+i*181)%1100,y=(seed*43+i*127)%650,w=90+((seed+i*17)%210),h=30+((seed+i*31)%130);
-      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${18+(i%3)*14}" fill="${p[(i+1)%p.length]}" opacity="${.22+(i%3)*.12}" transform="rotate(${(i%2?1:-1)*(8+(seed+i)%18)} ${x+w/2} ${y+h/2})"/>`;
-    }).join('');
+    const p=palettes[cat]||palettes.natura, v=(index-1)%4;
+    const common=`<rect width="1200" height="800" fill="${p[3]}"/><rect x="38" y="38" width="1124" height="724" rx="34" fill="none" stroke="${p[1]}" stroke-width="5" opacity=".35"/>`;
+    const scenes={
+      natura:`<rect y="500" width="1200" height="300" fill="${p[2]}"/><circle cx="950" cy="150" r="85" fill="#f4c95d"/><path d="M0 520 L260 260 L470 520 L700 300 L980 520 Z" fill="${p[1]}"/><path d="M0 590 Q260 470 500 590 T1200 565 V800 H0Z" fill="${p[0]}"/>`,
+      citta:`<rect y="610" width="1200" height="190" fill="${p[0]}"/><g fill="${p[1]}"><rect x="80" y="300" width="150" height="310"/><rect x="270" y="190" width="185" height="420"/><rect x="500" y="350" width="150" height="260"/><rect x="700" y="140" width="210" height="470"/><rect x="950" y="280" width="150" height="330"/></g><g fill="#ffd76a"><rect x="310" y="245" width="28" height="35"/><rect x="750" y="205" width="30" height="38"/><rect x="1010" y="345" width="28" height="34"/></g>`,
+      animali:`<rect y="535" width="1200" height="265" fill="${p[2]}"/><ellipse cx="595" cy="425" rx="190" ry="120" fill="${p[1]}"/><circle cx="760" cy="345" r="88" fill="${p[1]}"/><path d="M710 285 l-55 -80 l100 55 M805 285 l70 -72 l-20 105" fill="${p[1]}"/><circle cx="790" cy="330" r="10" fill="${p[0]}"/><path d="M420 470 q-120 20 -155 105" fill="none" stroke="${p[1]}" stroke-width="38" stroke-linecap="round"/>`,
+      cibo:`<rect width="1200" height="800" fill="${p[0]}"/><ellipse cx="600" cy="420" rx="365" ry="250" fill="#f7efe2"/><ellipse cx="600" cy="420" rx="275" ry="185" fill="${p[2]}"/><circle cx="515" cy="385" r="80" fill="#79a85b"/><circle cx="690" cy="360" r="72" fill="#d65f4a"/><path d="M430 510 Q600 390 780 520" fill="none" stroke="#f0d070" stroke-width="45" stroke-linecap="round"/>`,
+      architettura:`<rect y="610" width="1200" height="190" fill="${p[2]}"/><path d="M220 300 L600 110 L980 300 Z" fill="${p[0]}"/><rect x="270" y="300" width="660" height="310" fill="${p[3]}"/><g fill="${p[1]}"><rect x="335" y="325" width="60" height="260"/><rect x="455" y="325" width="60" height="260"/><rect x="575" y="325" width="60" height="260"/><rect x="695" y="325" width="60" height="260"/><rect x="815" y="325" width="60" height="260"/></g>`,
+      mare:`<rect width="1200" height="380" fill="#bde6f4"/><circle cx="930" cy="150" r="75" fill="#f6d36c"/><path d="M0 410 Q180 350 340 420 T680 410 T1020 430 T1200 400 V800 H0Z" fill="${p[1]}"/><path d="M0 520 Q170 455 340 530 T680 515 T1020 540 T1200 520 V800 H0Z" fill="${p[0]}" opacity=".78"/><path d="M130 650 Q430 580 700 680" fill="none" stroke="#f5e5b7" stroke-width="90"/>`,
+      montagna:`<rect width="1200" height="800" fill="#dceaf0"/><path d="M40 650 L360 185 L565 650 Z" fill="${p[1]}"/><path d="M410 650 L780 120 L1120 650 Z" fill="${p[0]}"/><path d="M250 345 L360 185 L455 335 L395 310 L360 345 L325 315 Z M660 290 L780 120 L910 305 L830 270 L780 315 L735 275 Z" fill="#fff"/><rect y="650" width="1200" height="150" fill="${p[2]}"/>`,
+      fiori:`<rect width="1200" height="800" fill="${p[3]}"/><g transform="translate(600 390)">${[0,60,120,180,240,300].map(a=>`<ellipse rx="85" ry="185" fill="${p[(a/60)%3]}" transform="rotate(${a}) translate(0 -115)" opacity=".9"/>`).join('')}<circle r="105" fill="#f1c84b"/></g><path d="M600 500 Q590 660 520 800" stroke="#4d8b57" stroke-width="32" fill="none"/>`,
+      oggetti:`<rect width="1200" height="800" fill="${p[3]}"/><rect y="570" width="1200" height="230" fill="${p[2]}"/><rect x="285" y="290" width="250" height="280" rx="26" fill="${p[1]}"/><circle cx="410" cy="430" r="72" fill="${p[3]}"/><rect x="660" y="240" width="250" height="330" rx="34" fill="${p[0]}"/><rect x="715" y="305" width="140" height="205" rx="18" fill="${p[2]}"/>`
+    };
     const title=(PICTURE_CATEGORY_DEFS.find(x=>x.id===cat)?.label||cat).toUpperCase();
-    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${p[0]}"/><stop offset=".5" stop-color="${p[1]}"/><stop offset="1" stop-color="${p[2]}"/></linearGradient></defs>
-      <rect width="1200" height="800" fill="url(#g)"/>
-      <path d="M0 590 C180 ${430+(seed%80)} 330 ${720-(seed%120)} 520 570 S880 420 1200 610 V800 H0Z" fill="${p[3]}" opacity=".25"/>
-      ${circles}${bars}
-      <rect x="54" y="54" width="1092" height="692" rx="42" fill="none" stroke="${p[3]}" stroke-opacity=".36" stroke-width="4"/>
-      <text x="78" y="700" font-family="system-ui,sans-serif" font-size="44" font-weight="800" fill="${p[3]}" opacity=".78">${title}</text>
-      <text x="80" y="742" font-family="system-ui,sans-serif" font-size="23" fill="${p[3]}" opacity=".6">SALA GIOCHI · ${String(index).padStart(2,'0')}</text>
-    </svg>`;
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">${common}${scenes[cat]||scenes.natura}<rect x="54" y="670" width="420" height="76" rx="22" fill="rgba(255,255,255,.78)"/><text x="82" y="720" font-family="system-ui,sans-serif" font-size="38" font-weight="850" fill="${p[0]}">${title} ${v+1}</text></svg>`;
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   }
   const PICTURE_ILLUSTRATIONS=PICTURE_CATEGORY_DEFS.flatMap(cat=>
-    Array.from({length:4},(_,i)=>({
-      id:`illus-${cat.id}-${i+1}`,type:'illustration',category:cat.id,
-      label:`${cat.label} · illustrazione ${i+1}`,url:pictureIllustrationSvg(cat.id,i+1)
-    }))
+    Array.from({length:4},(_,i)=>({id:`illus-${cat.id}-${i+1}`,type:'illustration',category:cat.id,label:`${cat.label} · illustrazione ${i+1}`,url:pictureIllustrationSvg(cat.id,i+1)}))
   );
-  const PICTURE_LIBRARY=[...PICTURE_PHOTOS,...PICTURE_ILLUSTRATIONS]; // 108 foto + 36 illustrazioni
 
   function readPuzzlePrefs(){
-    try{
-      const p=JSON.parse(localStorage.getItem(PICTURE_PREF_KEY)||'{}');
-      return {
-        type:['mixed','photo','illustration'].includes(p.type)?p.type:'mixed',
-        category:PICTURE_CATEGORY_DEFS.some(x=>x.id===p.category)?p.category:'all',
-        mode:['auto','classic','mosaic','shaped'].includes(p.mode)?p.mode:'auto'
-      };
-    }catch{return{type:'mixed',category:'all',mode:'auto'}}
+    try{const p=JSON.parse(localStorage.getItem(PICTURE_PREF_KEY)||'{}');return{
+      type:['mixed','photo','illustration'].includes(p.type)?p.type:'photo',
+      category:PICTURE_CATEGORY_DEFS.some(x=>x.id===p.category)?p.category:'all',
+      mode:['auto','classic','mosaic','shaped'].includes(p.mode)?p.mode:'auto'
+    }}catch{return{type:'photo',category:'all',mode:'auto'}}
   }
   function savePuzzlePrefs(p){try{localStorage.setItem(PICTURE_PREF_KEY,JSON.stringify(p))}catch{}}
-  function puzzleRecent(){
-    try{const a=JSON.parse(localStorage.getItem(PICTURE_RECENT_KEY)||'[]');return Array.isArray(a)?a.slice(0,30):[]}catch{return[]}
-  }
-  function rememberPuzzleImage(id){
-    try{
-      const a=puzzleRecent().filter(x=>x!==id);a.unshift(id);
-      localStorage.setItem(PICTURE_RECENT_KEY,JSON.stringify(a.slice(0,30)));
-    }catch{}
-  }
-  function puzzleCandidates(prefs){
-    return PICTURE_LIBRARY.filter(x=>
-      (prefs.type==='mixed'||x.type===prefs.type) &&
-      (prefs.category==='all'||x.category===prefs.category)
-    );
-  }
-  function choosePuzzleImage(prefs){
-    const all=puzzleCandidates(prefs),recent=new Set(puzzleRecent());
-    const fresh=all.filter(x=>!recent.has(x.id));
-    const pool=fresh.length?fresh:all;
-    return pool[Math.floor(activeRng()*pool.length)]||PICTURE_ILLUSTRATIONS[0];
-  }
+  function puzzleRecent(){try{const a=JSON.parse(localStorage.getItem(PICTURE_RECENT_KEY)||'[]');return Array.isArray(a)?a.slice(0,30):[]}catch{return[]}}
+  function rememberPuzzleImage(id){try{const a=puzzleRecent().filter(x=>x!==id);a.unshift(id);localStorage.setItem(PICTURE_RECENT_KEY,JSON.stringify(a.slice(0,30)))}catch{}}
   function resolvePuzzleMode(level,mode){
     if(mode!=='auto')return mode;
     if(level==='easy')return 'classic';
@@ -954,66 +909,101 @@
     if(level==='hard')return activeRng()<.52?'mosaic':'shaped';
     return activeRng()<.48?'mosaic':'shaped';
   }
-  function preloadPuzzleImage(entry){
-    return new Promise(resolve=>{
-      if(entry.type==='illustration'){resolve(entry);return}
-      const im=new Image();let done=false;
-      const finish=ok=>{if(done)return;done=true;clearTimeout(timer);resolve(ok?entry:null)};
-      im.onload=()=>finish(true);im.onerror=()=>finish(false);
-      const timer=setTimeout(()=>finish(false),7000);
-      im.src=entry.url;
-    });
+  function randomPuzzleCategory(){return PICTURE_CATEGORY_DEFS[Math.floor(activeRng()*PICTURE_CATEGORY_DEFS.length)]}
+  function stripHtml(s=''){const d=document.createElement('div');d.innerHTML=s;return (d.textContent||'').trim()}
+  function commonsCacheRead(cat){
+    try{const o=JSON.parse(localStorage.getItem(PICTURE_COMMONS_CACHE_PREFIX+cat)||'null');if(!o||!Array.isArray(o.items))return null;if(Date.now()-o.time>PICTURE_COMMONS_CACHE_MS)return null;return o.items}catch{return null}
   }
-  function fallbackPuzzleIllustration(category){
-    const a=PICTURE_ILLUSTRATIONS.filter(x=>x.category===category);
-    return a[Math.floor(activeRng()*a.length)]||PICTURE_ILLUSTRATIONS[0];
+  function commonsCacheWrite(cat,items){try{localStorage.setItem(PICTURE_COMMONS_CACHE_PREFIX+cat,JSON.stringify({time:Date.now(),items:items.slice(0,50)}))}catch{}}
+  async function loadCommonsPhotos(catId,force=false){
+    const def=PICTURE_CATEGORY_DEFS.find(x=>x.id===catId)||PICTURE_CATEGORY_DEFS[0];
+    if(!force){const cached=commonsCacheRead(def.id);if(cached?.length>=12)return cached}
+    const params=new URLSearchParams({
+      action:'query',generator:'search',gsrnamespace:'6',gsrsearch:`${def.search} filetype:bitmap`,gsrlimit:'50',
+      prop:'imageinfo',iiprop:'url|mime|size|extmetadata',iiurlwidth:'1200',
+      iiextmetadatafilter:'Artist|LicenseShortName',format:'json',origin:'*'
+    });
+    const resp=await fetch(`https://commons.wikimedia.org/w/api.php?${params.toString()}`,{mode:'cors',credentials:'omit'});
+    if(!resp.ok)throw new Error(`Commons HTTP ${resp.status}`);
+    const data=await resp.json(),pages=Object.values(data?.query?.pages||{});
+    const raw=pages.map(page=>{
+      const ii=page?.imageinfo?.[0];if(!ii||ii.mime!=='image/jpeg')return null;
+      const width=Number(ii.width||0),height=Number(ii.height||0),ratio=height?width/height:0;
+      if(width<900||height<600||ratio<.90||ratio>2.0)return null;
+      return {id:`commons-${page.pageid}`,type:'photo',category:def.id,label:(page.title||'Foto').replace(/^File:/,''),
+        url:ii.thumburl||ii.url,sourceUrl:ii.descriptionurl||'',author:stripHtml(ii.extmetadata?.Artist?.value||''),license:stripHtml(ii.extmetadata?.LicenseShortName?.value||'Wikimedia Commons')};
+    }).filter(Boolean);
+    const unique=[...new Map(raw.map(x=>[x.id,x])).values()];
+    if(unique.length<12){
+      // Seconda ricerca più ampia, sempre limitata a JPEG fotografici.
+      const p2=new URLSearchParams({action:'query',generator:'search',gsrnamespace:'6',gsrsearch:`${def.search.replace(/ photograph/g,'')} filetype:bitmap`,gsrlimit:'50',prop:'imageinfo',iiprop:'url|mime|size|extmetadata',iiurlwidth:'1200',iiextmetadatafilter:'Artist|LicenseShortName',format:'json',origin:'*'});
+      const r2=await fetch(`https://commons.wikimedia.org/w/api.php?${p2.toString()}`,{mode:'cors',credentials:'omit'});
+      if(r2.ok){const d2=await r2.json();for(const page of Object.values(d2?.query?.pages||{})){
+        const ii=page?.imageinfo?.[0];if(!ii||ii.mime!=='image/jpeg')continue;const width=Number(ii.width||0),height=Number(ii.height||0),ratio=height?width/height:0;if(width<900||height<600||ratio<.90||ratio>2.0)continue;
+        unique.push({id:`commons-${page.pageid}`,type:'photo',category:def.id,label:(page.title||'Foto').replace(/^File:/,''),url:ii.thumburl||ii.url,sourceUrl:ii.descriptionurl||'',author:stripHtml(ii.extmetadata?.Artist?.value||''),license:stripHtml(ii.extmetadata?.LicenseShortName?.value||'Wikimedia Commons')});
+      }}
+    }
+    const items=[...new Map(unique.map(x=>[x.id,x])).values()].slice(0,50);
+    if(items.length)commonsCacheWrite(def.id,items);
+    return items;
+  }
+  function illustrationCandidates(category){return PICTURE_ILLUSTRATIONS.filter(x=>category==='all'||x.category===category)}
+  function chooseFreshFromPool(pool){
+    const recent=new Set(puzzleRecent()),fresh=pool.filter(x=>!recent.has(x.id)),pick=fresh.length?fresh:pool;
+    return pick[Math.floor(activeRng()*pick.length)]||null;
+  }
+  async function choosePuzzleImageAsync(prefs,statusEl){
+    if(prefs.type==='illustration')return chooseFreshFromPool(illustrationCandidates(prefs.category));
+    const wantIllustration=prefs.type==='mixed'&&activeRng()<.18;
+    if(wantIllustration)return chooseFreshFromPool(illustrationCandidates(prefs.category));
+    const cat=prefs.category==='all'?randomPuzzleCategory():PICTURE_CATEGORY_DEFS.find(x=>x.id===prefs.category);
+    statusEl&&(statusEl.textContent=`Cerco fotografie reali: ${cat.label}…`);
+    const photos=await loadCommonsPhotos(cat.id);
+    statusEl&&(statusEl.textContent=`${photos.length} fotografie reali disponibili in ${cat.label}.`);
+    return chooseFreshFromPool(photos);
+  }
+  function preloadPuzzleImage(entry){
+    return new Promise(resolve=>{if(!entry){resolve(null);return}const im=new Image();let done=false;const finish=ok=>{if(done)return;done=true;clearTimeout(timer);resolve(ok?entry:null)};im.onload=()=>finish(true);im.onerror=()=>finish(false);const timer=setTimeout(()=>finish(false),10000);im.src=entry.url})
   }
 
   function startPicturePuzzle(level){
     setHeader('Puzzle',LEVEL_NAMES[level]);
     const prefs=readPuzzlePrefs(),session=sessionState('picturepuzzle',level);
-    const categoryOptions=[`<option value="all">Tutte le categorie</option>`,...PICTURE_CATEGORY_DEFS.map(x=>`<option value="${x.id}" ${prefs.category===x.id?'selected':''}>${x.label}</option>`)].join('');
+    const categoryOptions=[`<option value="all">Tutte le categorie</option>`,...PICTURE_CATEGORY_DEFS.map(x=>`<option value="${x.id}" ${prefs.category===x.id?'selected':''}>${x.icon} ${x.label}</option>`)].join('');
     app.innerHTML=gameShell('picturepuzzle',level,`
       <div class="puzzle-setup tablet-card">
         <div class="puzzle-setup-copy">
-          <span class="puzzle-kicker">PUZZLE 2.0 · SESSIONE ${session.session}/100</span>
+          <span class="puzzle-kicker">PUZZLE 2.1 · SESSIONE ${session.session}/100</span>
           <h2>Scegli il tuo puzzle</h2>
-          <p><b>108 fotografie</b> e <b>36 illustrazioni</b>, con memoria anti-ripetizione. Sul tablet l’area di gioco sfrutta lo spazio orizzontale; sul telefono si ricompone in verticale.</p>
+          <p><b>Fotografie vere</b> cercate per categoria su Wikimedia Commons, più illustrazioni locali riconoscibili. Il sistema evita le ultime 30 immagini già usate.</p>
         </div>
         <div class="puzzle-filter-grid">
-          <fieldset><legend>Immagini</legend>
-            <div class="puzzle-segment" data-pref="type">
-              ${Object.entries(PICTURE_TYPE_LABELS).map(([id,l])=>`<button type="button" data-value="${id}" class="${prefs.type===id?'active':''}">${l}</button>`).join('')}
-            </div>
-          </fieldset>
+          <fieldset><legend>Immagini</legend><div class="puzzle-segment" data-pref="type">${Object.entries(PICTURE_TYPE_LABELS).map(([id,l])=>`<button type="button" data-value="${id}" class="${prefs.type===id?'active':''}">${l}</button>`).join('')}</div></fieldset>
           <fieldset><legend>Categoria</legend><select id="puzzleCategory">${categoryOptions}</select></fieldset>
-          <fieldset class="puzzle-mode-field"><legend>Forma delle tessere</legend>
-            <div class="puzzle-mode-grid">
-              ${Object.entries(PICTURE_MODE_LABELS).map(([id,l])=>`<button type="button" data-mode="${id}" class="${prefs.mode===id?'active':''}"><b>${id==='classic'?'▦':id==='mosaic'?'▥':id==='shaped'?'⬡':'✦'}</b><span>${l}</span><small>${id==='auto'?'Cambia con il livello':id==='classic'?'Griglia regolare':id==='mosaic'?'Dimensioni diverse':'Profili irregolari'}</small></button>`).join('')}
-            </div>
-          </fieldset>
+          <fieldset class="puzzle-mode-field"><legend>Forma delle tessere</legend><div class="puzzle-mode-grid">${Object.entries(PICTURE_MODE_LABELS).map(([id,l])=>`<button type="button" data-mode="${id}" class="${prefs.mode===id?'active':''}"><b>${id==='classic'?'▦':id==='mosaic'?'▥':id==='shaped'?'⬡':'✦'}</b><span>${l}</span><small>${id==='auto'?'Cambia con il livello':id==='classic'?'Griglia regolare':id==='mosaic'?'Dimensioni diverse':'Profili irregolari'}</small></button>`).join('')}</div></fieldset>
         </div>
-        <div class="puzzle-library-note"><span>📷 108 foto</span><span>🎨 36 illustrazioni</span><span>↻ ultime 30 escluse</span><span>▣ ottimizzato tablet</span></div>
+        <div class="puzzle-library-note"><span>📷 Foto reali</span><span>🗂 9 categorie</span><span>↻ ultime 30 escluse</span><span>▣ tablet first</span></div>
+        <div id="puzzleSourceStatus" class="puzzle-source-status">Le fotografie vengono cercate nella categoria scelta solo quando premi “Crea il puzzle”.</div>
         <button id="puzzleStart" class="primary wide puzzle-start-btn">Crea il puzzle</button>
-        <small class="puzzle-photo-note">Le fotografie Creative Commons sono fornite da LoremFlickr/Flickr e richiedono una connessione al primo caricamento. Se la rete non è disponibile viene usata un’illustrazione locale.</small>
+        <small class="puzzle-photo-note">Fonte fotografica: Wikimedia Commons. In modalità “Solo fotografie” un errore di rete viene segnalato: non viene più sostituito di nascosto con un’illustrazione.</small>
       </div>
     `);
     let current={...prefs};
-    document.querySelectorAll('.puzzle-segment button').forEach(b=>b.onclick=()=>{
-      current.type=b.dataset.value;document.querySelectorAll('.puzzle-segment button').forEach(x=>x.classList.toggle('active',x===b));savePuzzlePrefs(current)
-    });
+    document.querySelectorAll('.puzzle-segment button').forEach(b=>b.onclick=()=>{current.type=b.dataset.value;document.querySelectorAll('.puzzle-segment button').forEach(x=>x.classList.toggle('active',x===b));savePuzzlePrefs(current)});
     document.getElementById('puzzleCategory').onchange=e=>{current.category=e.target.value;savePuzzlePrefs(current)};
-    document.querySelectorAll('.puzzle-mode-grid button').forEach(b=>b.onclick=()=>{
-      current.mode=b.dataset.mode;document.querySelectorAll('.puzzle-mode-grid button').forEach(x=>x.classList.toggle('active',x===b));savePuzzlePrefs(current)
-    });
+    document.querySelectorAll('.puzzle-mode-grid button').forEach(b=>b.onclick=()=>{current.mode=b.dataset.mode;document.querySelectorAll('.puzzle-mode-grid button').forEach(x=>x.classList.toggle('active',x===b));savePuzzlePrefs(current)});
     document.getElementById('puzzleStart').onclick=async e=>{
-      const btn=e.currentTarget;btn.disabled=true;btn.textContent='Preparo il puzzle…';
-      savePuzzlePrefs(current);
-      let pic=choosePuzzleImage(current);
-      const loaded=await preloadPuzzleImage(pic);
-      if(!loaded){pic=fallbackPuzzleIllustration(current.category==='all'?PICTURE_CATEGORY_DEFS[Math.floor(activeRng()*PICTURE_CATEGORY_DEFS.length)].id:current.category);toast('Foto non disponibile: uso un’illustrazione locale')}
-      rememberPuzzleImage(pic.id);
-      launchPicturePuzzle(level,pic,resolvePuzzleMode(level,current.mode));
+      const btn=e.currentTarget,status=document.getElementById('puzzleSourceStatus');btn.disabled=true;btn.textContent='Preparo il puzzle…';savePuzzlePrefs(current);
+      try{
+        let pic=await choosePuzzleImageAsync(current,status);
+        if(!pic)throw new Error('Nessuna immagine disponibile per questa categoria');
+        const loaded=await preloadPuzzleImage(pic);
+        if(!loaded)throw new Error(pic.type==='photo'?'La fotografia selezionata non è raggiungibile':'Immagine non disponibile');
+        rememberPuzzleImage(pic.id);launchPicturePuzzle(level,pic,resolvePuzzleMode(level,current.mode));
+      }catch(err){
+        status.textContent=`⚠ ${err.message}. Riprova oppure scegli un'altra categoria.`;status.classList.add('error');
+        btn.disabled=false;btn.textContent='Riprova';
+      }
     };
   }
 
@@ -1065,6 +1055,14 @@
     else launchPlacementPicturePuzzle(level,pic,cfg,mode);
   }
 
+  function puzzleCredit(pic){
+    if(pic.type!=='photo')return '';
+    const who=pic.author?` · ${esc(pic.author.slice(0,80))}`:'';
+    const lic=pic.license?` · ${esc(pic.license)}`:'';
+    const href=pic.sourceUrl?pic.sourceUrl.replace(/\"/g,'%22'):'';
+    return `<small class="puzzle-credit">Foto: Wikimedia Commons${who}${lic}${href?` · <a href="${href}" target="_blank" rel="noopener">scheda</a>`:''}</small>`;
+  }
+
   function puzzlePlayHeader(level,pic,mode,movesId){
     const cat=PICTURE_CATEGORY_DEFS.find(x=>x.id===pic.category)?.label||'Immagine';
     return `<div class="classic-mini-head puzzle-mini-head">
@@ -1079,7 +1077,7 @@
     app.innerHTML=gameShell('picturepuzzle',level,`
       ${puzzlePlayHeader(level,pic,'classic','picMoves')}
       <div class="picture-puzzle-layout puzzle-tablet-play">
-        <aside class="picture-reference"><small>IMMAGINE COMPLETA</small><img src="${pic.url}" alt="Immagine completa di riferimento: ${esc(pic.label)}"><span>${esc(pic.label)}</span></aside>
+        <aside class="picture-reference"><small>IMMAGINE COMPLETA</small><img src="${pic.url}" alt="Immagine completa di riferimento: ${esc(pic.label)}"><span>${esc(pic.label)}</span>${puzzleCredit(pic)}</aside>
         <div id="pictureBoard" class="picture-board" style="--puzzle-n:${cfg.size};--puzzle-img:url('${pic.url.replace(/'/g,"%27")}')" aria-label="Puzzle ${cfg.size} per ${cfg.size}"></div>
       </div>
       <div class="actions picture-actions">
@@ -1129,7 +1127,7 @@
       ${puzzlePlayHeader(level,pic,mode,'picMoves')}
       <div class="puzzle-placement-layout" style="--puzzle-img:url(\'${pic.url.replace(/\'/g,"%27")}\')">
         <section class="puzzle-stage-column">
-          <div class="picture-reference compact-ref"><small>RIFERIMENTO</small><img src="${pic.url}" alt="Immagine completa: ${esc(pic.label)}"><span>${esc(pic.label)}</span></div>
+          <div class="picture-reference compact-ref"><small>RIFERIMENTO</small><img src="${pic.url}" alt="Immagine completa: ${esc(pic.label)}"><span>${esc(pic.label)}</span>${puzzleCredit(pic)}</div>
           <div id="puzzleTarget" class="puzzle-target-board ${mode}" style="--puzzle-img:url('${pic.url.replace(/'/g,"%27")}')" aria-label="Quadro da ricostruire"></div>
         </section>
         <aside class="puzzle-tray-panel">
