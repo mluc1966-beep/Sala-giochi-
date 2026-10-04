@@ -1,11 +1,12 @@
 'use strict';
 
 /* Sala Giochi 2.0 — Nomi, Cose, Città
-   v2.11.0: tre giocatori, categorie configurabili, almeno una difficile, tablet-first. */
+   v2.11.2: sfida Tu vs AVVERSARIO, 5 categorie scelte + 1 categoria difficile automatica a rotazione, foglio orizzontale tablet-first. */
 (() => {
-  const NCC_VERSION='2.11.0';
+  const NCC_VERSION='2.11.2';
   const GAME_ID='nomicosacitta';
   const PREF_KEY='sala_giochi_ncc_prefs_v1';
+  const AUTO_HARD_KEY='sala_giochi_ncc_auto_hard_v1';
 
   GAME_NAMES[GAME_ID]='Nomi, Cose, Città';
   ICONS[GAME_ID]='ABC';
@@ -27,7 +28,7 @@
   const NCC_META={};
   Object.entries(NCC_GROUPS).forEach(([group,g])=>g.items.forEach(([id,label])=>NCC_META[id]={id,label,group,kind:g.kind}));
 
-  // Lessico usato esclusivamente dai due giocatori automatici.
+  // Lessico usato esclusivamente dall'AVVERSARIO automatico.
   // Le risposte dell'utente non sono limitate a questo elenco.
   const W={
     nome:['Andrea','Alessandro','Alice','Bruno','Beatrice','Carlo','Chiara','Claudio','Davide','Daniela','Elena','Emanuele','Federico','Francesca','Giorgio','Giulia','Irene','Ilaria','Luca','Laura','Marco','Marta','Nicola','Nadia','Olga','Paolo','Patrizia','Roberto','Rita','Sara','Stefano','Teresa','Tommaso','Valentina','Vittorio'],
@@ -58,29 +59,64 @@
     elemento:['Argon','Alluminio','Boro','Bromo','Carbonio','Calcio','Dubnio','Erbio','Ferro','Fluoro','Gallio','Iodio','Litio','Magnesio','Neon','Ossigeno','Piombo','Rame','Sodio','Titanio','Vanadio','Zinco']
   };
 
+  const USER_CATEGORY_COUNT=5;
+  const HARD_CATEGORY_IDS=NCC_GROUPS.hard.items.map(([id])=>id);
+
+  function autoState(){
+    try{
+      const raw=JSON.parse(localStorage.getItem(AUTO_HARD_KEY)||'{}');
+      if(Array.isArray(raw))return{used:raw.filter(id=>HARD_CATEGORY_IDS.includes(id)),last:raw.at(-1)||''};
+      return{used:Array.isArray(raw.used)?raw.used.filter(id=>HARD_CATEGORY_IDS.includes(id)):[],last:HARD_CATEGORY_IDS.includes(raw.last)?raw.last:''};
+    }catch{return{used:[],last:''}}
+  }
+  function saveAutoState(state){localStorage.setItem(AUTO_HARD_KEY,JSON.stringify(state))}
+  function rememberAutoCategory(id){
+    const state=autoState();
+    if(!state.used.includes(id))state.used.push(id);
+    state.last=id;
+    saveAutoState(state);
+  }
+  function chooseAutoCategory(userCategories){
+    const selected=new Set(userCategories);
+    let eligible=HARD_CATEGORY_IDS.filter(id=>!selected.has(id));
+    if(!eligible.length)eligible=[...HARD_CATEGORY_IDS];
+    const state=autoState();
+    let pool=eligible.filter(id=>!state.used.includes(id));
+    if(!pool.length){
+      // Nuovo giro: tutte le categorie difficili disponibili sono già passate.
+      // Riparte il ciclo, ma non può uscire subito la stessa dell'ultima partita.
+      state.used=[];
+      saveAutoState(state);
+      pool=eligible.filter(id=>id!==state.last);
+      if(!pool.length)pool=eligible;
+    }
+    return pool[Math.floor(activeRng()*pool.length)]||eligible[0];
+  }
+
   GAME_HELP[GAME_ID]={
     title:'Nomi, Cose, Città',
-    goal:'Trova parole che iniziano con la lettera estratta e prova a battere due avversari automatici.',
+    goal:'Trova parole che iniziano con la lettera estratta e prova a battere l’AVVERSARIO.',
     steps:[
-      'Prima della partita scegli liberamente le categorie. Deve esserci almeno una categoria del gruppo “difficili”.',
-      'A ogni round viene estratta una lettera. Compila una risposta per ogni categoria selezionata.',
-      'Quando hai finito premi “STOP · Consegna”: anche Giocatore 1 e Giocatore 2 vengono fermati in quel momento. Se non premi STOP, il round termina allo scadere del tempo.',
-      'Dopo la consegna vengono rivelate tutte e tre le schede e calcolati i punti categoria per categoria.',
-      'Una risposta valida e unica vale 10 punti; una risposta valida uguale a quella di un altro giocatore vale 5; risposta vuota o non valida vale 0.'
+      'Prima della partita scegli esattamente 5 categorie. La sesta è una categoria difficile scelta automaticamente dal gioco e cambia da una partita all’altra.',
+      'A ogni round viene estratta una lettera. Il foglio mantiene tutti i round uno sotto l’altro, come nel gioco su carta.',
+      'In ogni casella la tua risposta è sopra; dopo STOP compare subito sotto la risposta dell’AVVERSARIO.',
+      'Quando hai finito premi “STOP · Consegna”: anche l’AVVERSARIO viene fermato in quel momento. Se non premi STOP, il round termina allo scadere del tempo.',
+      'Una risposta valida e unica vale 10 punti; se TU e AVVERSARIO scrivete la stessa risposta vale 5; risposta vuota o non valida vale 0.'
     ],
     tips:[
-      'I due avversari non sono infallibili: possono lasciare caselle vuote, soprattutto nelle categorie difficili.',
-      'Se una tua risposta non è realmente valida per la categoria, dopo la rivelazione puoi annullarla con un tocco: il punteggio viene ricalcolato.',
-      'La difficoltà modifica tempo disponibile e abilità dei due avversari. Il numero di categorie resta una tua scelta.',
-      'Una sessione comprende più lettere e i punteggi si sommano fino alla classifica finale.'
+      'L’AVVERSARIO non è infallibile e può lasciare vuoto, soprattutto nelle categorie difficili.',
+      'Se una tua risposta non è realmente valida per la categoria, dopo la rivelazione puoi annullarla e il punteggio viene ricalcolato.',
+      'La categoria automatica ruota tra quelle difficili disponibili e non viene riproposta finché ce ne sono altre non usate.',
+      'I punteggi compaiono accanto a ogni risposta; sotto il foglio trovi soltanto il totale TU vs AVVERSARIO.',
+      'La difficoltà modifica tempo disponibile e abilità dell’AVVERSARIO.'
     ]
   };
 
   const LEVEL_CFG={
-    easy:{rounds:3,perCat:12,base:20,skills:[.55,.48],label:'Più tempo · avversari tranquilli'},
-    medium:{rounds:4,perCat:10,base:15,skills:[.68,.62],label:'Ritmo medio · avversari competitivi'},
-    hard:{rounds:5,perCat:8,base:10,skills:[.80,.75],label:'Poco tempo · avversari preparati'},
-    extreme:{rounds:5,perCat:7,base:5,skills:[.90,.86],label:'Tempo stretto · avversari molto forti'}
+    easy:{rounds:3,seconds:105,skill:.58,label:'Più tempo · avversario tranquillo'},
+    medium:{rounds:4,seconds:85,skill:.70,label:'Ritmo medio · avversario competitivo'},
+    hard:{rounds:5,seconds:70,skill:.82,label:'Poco tempo · avversario preparato'},
+    extreme:{rounds:5,seconds:55,skill:.91,label:'Tempo stretto · avversario molto forte'}
   };
 
   function h(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -88,13 +124,13 @@
   function prefs(){
     try{
       const p=JSON.parse(localStorage.getItem(PREF_KEY)||'{}');
-      const cats=Array.isArray(p.categories)?p.categories.filter(x=>NCC_META[x]):[];
-      if(cats.length&&cats.some(x=>NCC_META[x].group==='hard'))return{categories:cats};
+      const cats=Array.isArray(p.categories)?p.categories.filter(x=>NCC_META[x]).slice(0,USER_CATEGORY_COUNT):[];
+      if(cats.length===USER_CATEGORY_COUNT)return{categories:cats};
     }catch{}
-    return{categories:['nome','cosa','citta','animale','mestiere','colore','capitale']};
+    return{categories:['nome','cosa','citta','animale','mestiere']};
   }
-  function savePrefs(categories){localStorage.setItem(PREF_KEY,JSON.stringify({categories}))}
-  function timeFor(level,count){const c=LEVEL_CFG[level];return Math.max(35,Math.min(210,c.base+c.perCat*count))}
+  function savePrefs(categories){localStorage.setItem(PREF_KEY,JSON.stringify({categories:categories.filter(x=>NCC_META[x]).slice(0,USER_CATEGORY_COUNT)}))}
+  function timeFor(level){return LEVEL_CFG[level].seconds}
   function matching(cat,letter){return (W[cat]||[]).filter(x=>n(x).startsWith(letter))}
   function tierPenalty(cat){const g=NCC_META[cat]?.group;return g==='hard'?.12:g==='easy'?.04:0}
 
@@ -107,7 +143,7 @@
       const ratio=cover/Math.max(1,categories.length);
       const score=ratio*100+Math.min(totalWords,20)+(hardCover?18:-30)-(recent.has(letter)?60:0);
       return{letter,cover,hardCover,score};
-    }).filter(x=>x.hardCover>0&&x.cover>=Math.max(2,Math.ceil(categories.length*.52)));
+    }).filter(x=>x.hardCover>0&&x.cover>=Math.max(4,Math.ceil(categories.length*.60)));
     const pool=(scored.length?scored:letters.map(letter=>({letter,score:matching(categories[0]||'nome',letter).length})))
       .sort((a,b)=>b.score-a.score).slice(0,Math.max(5,Math.ceil(scored.length*.55)||5));
     return pool[Math.floor(activeRng()*pool.length)]?.letter||'M';
@@ -156,163 +192,175 @@
 
   function renderSetup(level){
     const p=prefs();
-    const selected=new Set(p.categories);
+    const selected=new Set(p.categories.slice(0,USER_CATEGORY_COUNT));
+    const autoCategory=chooseAutoCategory([...selected]);
+    selected.delete(autoCategory);
+    while(selected.size<USER_CATEGORY_COUNT){
+      const fallback=['nome','cosa','citta','animale','mestiere','colore','cibo','sport','film','marca'].find(id=>id!==autoCategory&&!selected.has(id));
+      if(!fallback)break;selected.add(fallback);
+    }
     const cfg=LEVEL_CFG[level];
     app.innerHTML=gameShell(GAME_ID,level,`
       <section class="ncc-setup">
         <div class="ncc-setup-hero">
-          <div><span class="ncc-kicker">PARTITA A 3 GIOCATORI</span><h2>Nomi, Cose, Città</h2><p>Scegli le categorie della partita. <b>Almeno una deve essere difficile.</b></p></div>
-          <div class="ncc-players-mini"><span><b>Tu</b><small>umano</small></span><span><b>Giocatore 1</b><small>automatico</small></span><span><b>Giocatore 2</b><small>automatico</small></span></div>
+          <div><span class="ncc-kicker">SFIDA A 2 GIOCATORI</span><h2>Nomi, Cose, Città</h2><p>Scegli <b>5 categorie</b>. La sesta viene scelta automaticamente dal gioco tra le categorie difficili e cambia a ogni partita.</p></div>
+          <div class="ncc-players-mini"><span><b>Tu</b><small>giocatore reale</small></span><span><b>AVVERSARIO</b><small>automatico</small></span></div>
         </div>
-        <div class="ncc-config-summary"><span id="nccSelectedCount"></span><span>${cfg.rounds} round</span><span id="nccTimeInfo"></span><span>${h(cfg.label)}</span></div>
+        <div class="ncc-fixed-category"><span>★ CATEGORIA AUTOMATICA</span><b>${h(NCC_META[autoCategory].label)}</b><small>Scelta dal gioco per questa partita · alla prossima cambierà.</small></div>
+        <div class="ncc-config-summary"><span id="nccSelectedCount"></span><span>${cfg.rounds} round</span><span>${cfg.seconds} s/round</span><span>${h(cfg.label)}</span></div>
         <div class="ncc-category-groups">
           ${Object.entries(NCC_GROUPS).map(([key,g])=>`
-            <section class="ncc-cat-group ${key}"><div class="ncc-cat-title"><h3>${h(g.label)}</h3>${key==='hard'?'<span>★ almeno 1</span>':''}</div>
-            <div class="ncc-cat-chips">${g.items.map(([id,label])=>`<button type="button" class="ncc-cat-chip ${selected.has(id)?'selected':''}" data-cat="${id}">${h(label)}</button>`).join('')}</div></section>
+            <section class="ncc-cat-group ${key}"><div class="ncc-cat-title"><h3>${h(g.label)}</h3>${key==='hard'?`<span>${h(NCC_META[autoCategory].label)} scelta dal gioco</span>`:''}</div>
+            <div class="ncc-cat-chips">${g.items.map(([id,label])=>id===autoCategory
+              ?`<span class="ncc-cat-chip fixed selected" aria-disabled="true">${h(label)} <small>AUTO</small></span>`
+              :`<button type="button" class="ncc-cat-chip ${selected.has(id)?'selected':''}" data-cat="${id}">${h(label)}</button>`).join('')}</div></section>
           `).join('')}
         </div>
         <div id="nccSetupError" class="ncc-setup-error" aria-live="polite"></div>
         <div class="ncc-setup-actions"><button id="nccDefault" class="secondary" type="button">Selezione classica</button><button id="nccClear" class="secondary" type="button">Azzera</button><button id="nccStart" class="primary" type="button">Inizia la partita</button></div>
       </section>`);
 
-    const chips=[...document.querySelectorAll('.ncc-cat-chip')];
+    const chips=[...document.querySelectorAll('.ncc-cat-chip[data-cat]')];
     const error=document.getElementById('nccSetupError');
-    function sync(){
-      const cats=chips.filter(b=>b.classList.contains('selected')).map(b=>b.dataset.cat);
-      const hard=cats.filter(x=>NCC_META[x].group==='hard').length;
-      document.getElementById('nccSelectedCount').textContent=`${cats.length} categorie`;
-      document.getElementById('nccTimeInfo').textContent=`${timeFor(level,cats.length)} s/round`;
-      error.textContent=hard?'':'Seleziona almeno una categoria difficile.';
-      document.getElementById('nccStart').disabled=!hard||!cats.length;
+    function selectedCats(){return chips.filter(b=>b.classList.contains('selected')).map(b=>b.dataset.cat)}
+    function sync(message=''){
+      const cats=selectedCats();
+      document.getElementById('nccSelectedCount').textContent=`${cats.length}/5 scelte + 1 automatica`;
+      error.textContent=message||(cats.length<USER_CATEGORY_COUNT?`Scegli ancora ${USER_CATEGORY_COUNT-cats.length} ${USER_CATEGORY_COUNT-cats.length===1?'categoria':'categorie'}.`:'Selezione completa: 6 categorie totali.');
+      error.classList.toggle('ok',cats.length===USER_CATEGORY_COUNT);
+      document.getElementById('nccStart').disabled=cats.length!==USER_CATEGORY_COUNT;
       return cats;
     }
-    chips.forEach(b=>b.onclick=()=>{b.classList.toggle('selected');sync()});
-    document.getElementById('nccDefault').onclick=()=>{const d=new Set(['nome','cosa','citta','animale','mestiere','colore','capitale']);chips.forEach(b=>b.classList.toggle('selected',d.has(b.dataset.cat)));sync()};
+    chips.forEach(b=>b.onclick=()=>{
+      const isSelected=b.classList.contains('selected');
+      if(!isSelected&&selectedCats().length>=USER_CATEGORY_COUNT){sync(`Puoi scegliere al massimo 5 categorie: la sesta è già ${NCC_META[autoCategory].label}.`);return}
+      b.classList.toggle('selected');sync();
+    });
+    document.getElementById('nccDefault').onclick=()=>{const d=new Set(['nome','cosa','citta','animale','mestiere']);chips.forEach(b=>b.classList.toggle('selected',d.has(b.dataset.cat)));sync()};
     document.getElementById('nccClear').onclick=()=>{chips.forEach(b=>b.classList.remove('selected'));sync()};
-    document.getElementById('nccStart').onclick=()=>{const cats=sync();if(!cats.some(x=>NCC_META[x].group==='hard'))return;savePrefs(cats);startMatch(level,cats)};
+    document.getElementById('nccStart').onclick=()=>{const cats=sync();if(cats.length!==USER_CATEGORY_COUNT)return;savePrefs(cats);rememberAutoCategory(autoCategory);startMatch(level,[...cats,autoCategory],autoCategory)};
     sync();
   }
 
-  function startMatch(level,categories){
+  function startMatch(level,categories,autoCategory){
     const cfg=LEVEL_CFG[level];
-    let round=0;
-    const totals=[0,0,0];
+    let round=1;
     const usedLetters=[];
-    let roundSeconds=0,deadline=0,submitted=false,currentAnswers=null,userInvalid=new Set();
+    const history=[];
+    let roundSeconds=cfg.seconds,deadline=0,submitted=false,currentLetter='',userInvalid=new Set();
     activeStart=Date.now();
 
-    function scoreboard(){return `<div class="ncc-scorebar"><span class="you"><b>Tu</b><strong>${totals[0]}</strong></span><span><b>Giocatore 1</b><strong>${totals[1]}</strong></span><span><b>Giocatore 2</b><strong>${totals[2]}</strong></span></div>`}
+    const totalScores=()=>history.reduce((acc,r)=>{acc[0]+=r.points[0].reduce((a,b)=>a+b,0);acc[1]+=r.points[1].reduce((a,b)=>a+b,0);return acc},[0,0]);
+    const categoryClass=(cat,i)=>`cat-${i} ${NCC_META[cat].group==='hard'?'hard':''} ${cat===autoCategory?'fixed':''}`;
 
-    function nextRound(){
-      round++;
-      submitted=false;userInvalid=new Set();
-      const letter=chooseLetter(categories,usedLetters);usedLetters.push(letter);
-      roundSeconds=timeFor(level,categories.length);
-      deadline=Date.now()+roundSeconds*1000;
-      app.innerHTML=gameShell(GAME_ID,level,`
-        <div class="ncc-round-head"><div><span class="ncc-kicker">ROUND ${round}/${cfg.rounds}</span><h2>Lettera <b>${letter}</b></h2></div>${scoreboard()}</div>
-        <div class="ncc-play-grid">
-          <main class="ncc-answer-panel">
-            <div class="ncc-round-note">Scrivi una risposta per categoria che inizi con <b>${letter}</b>. Quando hai finito, premi STOP.</div>
-            <div class="ncc-answer-grid">
-              ${categories.map((cat,i)=>`<label class="ncc-answer-card"><span>${h(NCC_META[cat].label)}${NCC_META[cat].group==='hard'?'<em>★ difficile</em>':''}</span><input data-cat="${cat}" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="${letter}…" ${i===0?'autofocus':''}></label>`).join('')}
-            </div>
-            <div class="ncc-stop-row"><button id="nccStop" class="primary ncc-stop" type="button">STOP · Consegna</button><small>Anche gli altri due giocatori si fermano quando consegni.</small></div>
-          </main>
-          <aside class="ncc-side-panel"><h3>Partita</h3><div class="ncc-letter-big">${letter}</div><p>${categories.length} categorie</p><p>${cfg.rounds-round} round dopo questo</p><div class="ncc-bot-status"><span>● Giocatore 1 sta scrivendo…</span><span>● Giocatore 2 sta scrivendo…</span></div></aside>
-        </div>`);
-      const first=document.querySelector('.ncc-answer-card input');if(first)setTimeout(()=>first.focus(),80);
-      startCountdown(letter);
-      document.getElementById('nccStop').onclick=()=>submitRound(letter,false);
-      document.querySelectorAll('.ncc-answer-card input').forEach((inp,idx,arr)=>inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();(arr[idx+1]||document.getElementById('nccStop')).focus()}}));
+    function scorePair(user,opponent,invalid){
+      const userValid=!invalid&&!!user;
+      const oppValid=!!opponent;
+      return scoreRow([user,opponent],[userValid,oppValid]);
     }
 
-    function startCountdown(letter){
+    function roundPoints(user,opponent,invalidSet){
+      const u=[],o=[];
+      categories.forEach((cat,i)=>{const p=scorePair(user[i],opponent[i],invalidSet.has(i));u.push(p[0]);o.push(p[1])});
+      return [u,o];
+    }
+
+    function blankCells(r){
+      return categories.map((cat,i)=>`<td class="ncc-paper-cell ${categoryClass(cat,i)}"><div class="ncc-cell-player you"><span>TU</span><input data-cat="${cat}" data-i="${i}" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="${currentLetter}…"></div><div class="ncc-cell-player opponent waiting"><span>AVVERSARIO</span><b>sta scrivendo…</b></div></td>`).join('');
+    }
+
+    function completedCells(item){
+      return categories.map((cat,i)=>{
+        const invalid=item.invalid.has(i);const up=item.points[0][i],op=item.points[1][i];
+        return `<td class="ncc-paper-cell ${categoryClass(cat,i)}"><div class="ncc-cell-player you ${invalid?'invalid':''}"><span>TU</span><b>${item.user[i]?h(item.user[i]):'—'}</b><strong>${invalid?0:up} pt</strong>${item.user[i]?`<button class="ncc-valid-toggle" data-round="${item.round}" data-i="${i}" type="button">${invalid?'Ripristina':'Annulla'}</button>`:''}</div><div class="ncc-cell-player opponent"><span>AVVERSARIO</span><b>${item.opponent[i]?h(item.opponent[i]):'—'}</b><strong>${op} pt</strong></div></td>`;
+      }).join('');
+    }
+
+    function futureCells(){return categories.map((cat,i)=>`<td class="ncc-paper-cell ${categoryClass(cat,i)} future"><span>—</span></td>`).join('')}
+
+    function sheetRows(){
+      let out='';
+      for(let r=1;r<=cfg.rounds;r++){
+        const item=history.find(x=>x.round===r);
+        const isCurrent=r===round&&!submitted;
+        const letter=item?.letter||(isCurrent?currentLetter:'');
+        out+=`<tr class="${isCurrent?'current':''} ${item?'done':''}"><th class="ncc-round-cell"><b>${r}</b><span>${letter||'—'}</span></th>${item?completedCells(item):isCurrent?blankCells(r):futureCells()}</tr>`;
+      }
+      return out;
+    }
+
+    function scoreboard(){const [you,opp]=totalScores();return `<div class="ncc-total-score"><div class="you"><small>TU</small><strong>${you}</strong></div><span class="vs">VS</span><div class="opp"><small>AVVERSARIO</small><strong>${opp}</strong></div></div>`}
+
+    function renderRound(){
+      app.innerHTML=gameShell(GAME_ID,level,`
+        <div class="ncc-round-banner"><div class="ncc-letter-panel"><small>LETTERA</small><strong>${currentLetter}</strong></div><div class="ncc-round-progress"><span class="ncc-kicker">ROUND ${round}/${cfg.rounds}</span><h2>Compila la riga ${round}</h2><div class="ncc-time-line"><span>Tempo rimanente</span><div><i id="nccTimeBar"></i></div><b id="nccTimeText">${fmtTime(roundSeconds)}</b></div></div><button id="nccStop" class="ncc-stop" type="button">STOP<br><small>Consegna</small></button></div>
+        <div class="ncc-paper-wrap"><table class="ncc-paper"><thead><tr><th class="round-head">#</th>${categories.map((cat,i)=>`<th class="${categoryClass(cat,i)}">${h(NCC_META[cat].label)}${cat===autoCategory?'<small>★ AUTO</small>':''}</th>`).join('')}</tr></thead><tbody>${sheetRows()}</tbody></table></div>
+        <div class="ncc-paper-help"><span>10 = unica</span><span>5 = uguale all’avversario</span><span>0 = vuota/non valida</span></div>
+        ${scoreboard()}`);
+      const first=document.querySelector('.ncc-paper tr.current input');if(first)setTimeout(()=>first.focus(),80);
+      document.getElementById('nccStop').onclick=()=>submitRound(false);
+      document.querySelectorAll('.ncc-paper tr.current input').forEach((inp,idx,arr)=>inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();(arr[idx+1]||document.getElementById('nccStop')).focus()}}));
+      startCountdown();
+    }
+
+    function startCountdown(){
       if(activeTimer)clearInterval(activeTimer);
-      const el=document.getElementById('timer');
+      deadline=Date.now()+roundSeconds*1000;
       const tick=()=>{
         const left=Math.max(0,Math.ceil((deadline-Date.now())/1000));
-        if(el)el.textContent=fmtTime(left);
-        if(left<=0){clearInterval(activeTimer);activeTimer=null;submitRound(letter,true)}
+        const text=document.getElementById('nccTimeText'),timer=document.getElementById('timer'),bar=document.getElementById('nccTimeBar');
+        if(text)text.textContent=fmtTime(left);if(timer)timer.textContent=fmtTime(left);if(bar)bar.style.width=`${Math.max(0,left/roundSeconds*100)}%`;
+        if(left<=0){clearInterval(activeTimer);activeTimer=null;submitRound(true)}
       };
       tick();activeTimer=setInterval(tick,250);
     }
 
-    function submitRound(letter,timeout){
+    function submitRound(timeout){
       if(submitted)return;submitted=true;
       if(activeTimer){clearInterval(activeTimer);activeTimer=null}
       const remaining=Math.max(0,(deadline-Date.now())/1000);
       const fraction=Math.max(.05,Math.min(1,1-remaining/roundSeconds));
       const user=categories.map(cat=>document.querySelector(`input[data-cat="${cat}"]`)?.value.trim()||'');
-      const bot1=categories.map(cat=>botAnswer(cat,letter,cfg.skills[0],fraction));
-      const bot2=categories.map(cat=>botAnswer(cat,letter,cfg.skills[1],fraction));
-      currentAnswers=[user,bot1,bot2];
-      user.forEach((ans,i)=>{if(!ans||!n(ans).startsWith(letter))userInvalid.add(i)});
-      renderReveal(letter,timeout);
+      const opponent=categories.map(cat=>botAnswer(cat,currentLetter,cfg.skill,fraction));
+      userInvalid=new Set();user.forEach((ans,i)=>{if(!ans||!n(ans).startsWith(currentLetter))userInvalid.add(i)});
+      const points=roundPoints(user,opponent,userInvalid);
+      history.push({round,letter:currentLetter,user,opponent,invalid:new Set(userInvalid),points,timeout});
+      renderReveal();
     }
 
-    function computePoints(){
-      const pts=[0,0,0];
-      categories.forEach((cat,i)=>{
-        const answers=currentAnswers.map(a=>a[i]);
-        const valid=[!userInvalid.has(i)&&!!answers[0],!!answers[1],!!answers[2]];
-        const row=scoreRow(answers,valid);
-        row.forEach((v,p)=>pts[p]+=v);
-      });
-      return pts;
-    }
-
-    function renderReveal(letter,timeout){
-      const before=[...totals];
-      const roundPts=computePoints();
-      // totals vengono mostrati come base + punteggio corrente; il commit avviene passando al round successivo.
-      function html(){
-        return gameShell(GAME_ID,level,`
-          <div class="ncc-round-head reveal"><div><span class="ncc-kicker">ROUND ${round}/${cfg.rounds} · RISULTATI</span><h2>Lettera <b>${letter}</b></h2><p>${timeout?'Tempo scaduto.':'Hai chiamato STOP.'}</p></div>
-          <div class="ncc-scorebar"><span class="you"><b>Tu</b><strong>${before[0]+roundPts[0]}</strong><small>+${roundPts[0]}</small></span><span><b>Giocatore 1</b><strong>${before[1]+roundPts[1]}</strong><small>+${roundPts[1]}</small></span><span><b>Giocatore 2</b><strong>${before[2]+roundPts[2]}</strong><small>+${roundPts[2]}</small></span></div></div>
-          <div class="ncc-scoring-note"><b>10</b> risposta unica · <b>5</b> risposta uguale a un altro giocatore · <b>0</b> vuota/non valida. Tocca “Annulla” su una tua risposta se non è valida.</div>
-          <div id="nccResults" class="ncc-results">
-            ${categories.map((cat,i)=>resultCard(cat,i,roundPts)).join('')}
-          </div>
-          <div class="ncc-reveal-actions"><button id="nccNextRound" class="primary" type="button">${round<cfg.rounds?'Round successivo':'Classifica finale'}</button></div>`);
-      }
-      app.innerHTML=html();
+    function renderReveal(){
+      const item=history[history.length-1];
+      app.innerHTML=gameShell(GAME_ID,level,`
+        <div class="ncc-round-banner result"><div class="ncc-letter-panel"><small>LETTERA</small><strong>${item.letter}</strong></div><div class="ncc-round-progress"><span class="ncc-kicker">ROUND ${item.round}/${cfg.rounds} · RISULTATI</span><h2>${item.timeout?'Tempo scaduto':'Hai chiamato STOP'}</h2><p>Le risposte dell’AVVERSARIO sono subito sotto le tue.</p></div><button id="nccNextRound" class="ncc-next" type="button">${item.round<cfg.rounds?'Prossimo round →':'Risultato finale →'}</button></div>
+        <div class="ncc-paper-wrap"><table class="ncc-paper"><thead><tr><th class="round-head">#</th>${categories.map((cat,i)=>`<th class="${categoryClass(cat,i)}">${h(NCC_META[cat].label)}${cat===autoCategory?'<small>★ AUTO</small>':''}</th>`).join('')}</tr></thead><tbody>${sheetRows()}</tbody></table></div>
+        <div class="ncc-paper-help"><span>Puoi annullare una tua risposta se non è valida.</span><span>Il punteggio viene ricalcolato subito.</span></div>
+        ${scoreboard()}`);
       attachInvalidButtons();
+      document.getElementById('nccNextRound').onclick=()=>{if(round<cfg.rounds){round++;beginRound()}else finishMatch()};
+    }
 
-      function resultCard(cat,i,pts){
-        const labels=['Tu','Giocatore 1','Giocatore 2'];
-        const answers=currentAnswers.map(a=>a[i]);
-        return `<article class="ncc-result-card"><div class="ncc-result-cat"><span>${h(NCC_META[cat].label)}</span>${NCC_META[cat].group==='hard'?'<em>★ difficile</em>':''}</div><div class="ncc-result-players">
-          ${answers.map((ans,p)=>{const invalid=p===0&&userInvalid.has(i);return `<div class="ncc-result-player ${p===0?'you':''} ${invalid?'invalid':''}"><small>${labels[p]}</small><b>${ans?h(ans):'—'}</b><strong>${invalid?0:pts[p]} pt</strong>${p===0&&ans?`<button class="ncc-valid-toggle" data-i="${i}" type="button">${invalid?'Ripristina':'Annulla'}</button>`:''}</div>`}).join('')}
-        </div></article>`;
-      }
+    function attachInvalidButtons(){
+      document.querySelectorAll('.ncc-valid-toggle').forEach(b=>b.onclick=()=>{
+        const r=+b.dataset.round,i=+b.dataset.i;const item=history.find(x=>x.round===r);if(!item)return;
+        if(item.invalid.has(i)){const ans=item.user[i];if(ans&&n(ans).startsWith(item.letter))item.invalid.delete(i)}else item.invalid.add(i);
+        item.points=roundPoints(item.user,item.opponent,item.invalid);renderReveal();
+      });
+    }
 
-      function attachInvalidButtons(){
-        document.querySelectorAll('.ncc-valid-toggle').forEach(b=>b.onclick=()=>{
-          const i=+b.dataset.i;
-          if(userInvalid.has(i)){
-            const ans=currentAnswers[0][i];
-            if(ans&&n(ans).startsWith(letter))userInvalid.delete(i);
-          }else userInvalid.add(i);
-          const newPts=computePoints();roundPts.splice(0,3,...newPts);app.innerHTML=html();attachInvalidButtons();
-        });
-        document.getElementById('nccNextRound').onclick=()=>{
-          roundPts.forEach((v,i)=>totals[i]+=v);
-          if(round<cfg.rounds)nextRound();else finishMatch();
-        };
-      }
+    function beginRound(){
+      submitted=false;userInvalid=new Set();roundSeconds=cfg.seconds;
+      currentLetter=chooseLetter(categories,usedLetters);usedLetters.push(currentLetter);
+      renderRound();
     }
 
     function finishMatch(){
-      const ranking=[{name:'Tu',score:totals[0],idx:0},{name:'Giocatore 1',score:totals[1],idx:1},{name:'Giocatore 2',score:totals[2],idx:2}].sort((a,b)=>b.score-a.score);
-      const top=ranking[0].score;
-      const success=totals[0]===top;
-      const place=ranking.findIndex(x=>x.idx===0)+1;
-      const message=`<b>Tu: ${totals[0]}</b> · Giocatore 1: ${totals[1]} · Giocatore 2: ${totals[2]}. ${place===1?'Hai vinto la partita.':`Hai concluso al ${place}° posto.`}`;
-      concludeSession(GAME_ID,level,totals[0],success,message);
+      const [you,opp]=totalScores();
+      const success=you>=opp;
+      const message=`<b>Tu: ${you}</b> · AVVERSARIO: ${opp}. ${you>opp?'Hai vinto la partita.':you===opp?'Partita pareggiata.':'Ha vinto l’AVVERSARIO.'}`;
+      concludeSession(GAME_ID,level,you,success,message);
     }
 
-    nextRound();
+    beginRound();
   }
 
   // Inserimento nella famiglia dei giochi classici senza modificare il motore già funzionante.
@@ -323,7 +371,7 @@
     const btn=document.createElement('button');
     btn.className='sg2-classic-card art-nomicosacitta';
     btn.onclick=()=>chooseDifficulty(GAME_ID);
-    btn.innerHTML=`<span class="sg2-classic-icon">ABC</span><strong>Nomi, Cose, Città</strong><small>Tre giocatori · categorie a scelta</small>`;
+    btn.innerHTML=`<span class="sg2-classic-icon">ABC</span><strong>Nomi, Cose, Città</strong><small>Tu vs AVVERSARIO · 6 categorie</small>`;
     const puzzle=grid.querySelector('.art-picturepuzzle');
     if(puzzle)puzzle.after(btn);else grid.appendChild(btn);
   };
@@ -340,7 +388,7 @@
   if(oldClue)currentClueText=function(){
     if(activeGame===GAME_ID){
       const letter=document.querySelector('.ncc-letter-big')?.textContent||document.querySelector('.ncc-round-head h2 b')?.textContent||'';
-      const cats=[...document.querySelectorAll('.ncc-answer-card>span')].map(x=>x.childNodes[0]?.textContent?.trim()).filter(Boolean);
+      const cats=[...document.querySelectorAll('.ncc-paper thead th:not(.round-head)')].map(x=>x.childNodes[0]?.textContent?.trim()).filter(Boolean);
       return `Nomi, Cose, Città · Lettera ${letter}${cats.length?` · ${cats.join(', ')}`:''}`;
     }
     return oldClue();
