@@ -1,9 +1,9 @@
 'use strict';
 
 /* Sala Giochi 2.0 — Nomi, Cose, Città
-   v2.11.3: sfida Tu vs AVVERSARIO, 5 categorie scelte + 1 categoria difficile automatica a rotazione, foglio orizzontale tablet-first. */
+   v2.11.4: sfida Tu vs AVVERSARIO, 5 categorie scelte + 1 categoria difficile automatica a rotazione, foglio orizzontale tablet-first. */
 (() => {
-  const NCC_VERSION='2.11.3';
+  const NCC_VERSION='2.11.4';
   const GAME_ID='nomicosacitta';
   const PREF_KEY='sala_giochi_ncc_prefs_v1';
   const AUTO_HARD_KEY='sala_giochi_ncc_auto_hard_v1';

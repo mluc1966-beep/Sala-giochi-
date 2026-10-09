@@ -1,0 +1,18 @@
+Sala Giochi v2.11.4 — percorso PWA separato
+
+Caricare nella root del repository:
+- index.html
+- nomi-cose-citta.js
+- sw.js
+
+Creare inoltre la cartella app/ e caricare dentro:
+- app/index.html
+- app/manifest.webmanifest
+- app/sw.js
+
+Poi aprire sul telefono:
+https://mluc1966-beep.github.io/Sala-giochi-/app/
+
+e usare il menu Chrome > Installa app.
+
+La cartella app usa lo stesso dominio della Sala Giochi principale, quindi localStorage e progressi restano condivisi.
