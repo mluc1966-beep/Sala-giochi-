@@ -1,10 +1,19 @@
 {
-  "name":"Sala Giochi",
-  "short_name":"Giochi",
-  "start_url":"./",
-  "display":"standalone",
-  "background_color":"#f3f5fb",
-  "theme_color":"#18233b",
-  "lang":"it",
-  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+  "id": "/Sala-giochi-/sala-giochi-2",
+  "name": "Sala Giochi",
+  "short_name": "Giochi",
+  "start_url": "/Sala-giochi-/",
+  "scope": "/Sala-giochi-/",
+  "display": "standalone",
+  "background_color": "#f3f5fb",
+  "theme_color": "#18233b",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
-const CACHE='sala-giochi-v2.11.2';
+const CACHE='sala-giochi-v2.11.3';
 const PHOTO_CACHE='sala-giochi-puzzle-photos-v1';
 const ASSETS=[
-  './','./index.html','./styles.css','./nextgen.css?v=2.10.2','./nomi-cose-citta.css?v=2.11.2','./app.js','./nextgen.js?v=2.10.2','./nomi-cose-citta.js?v=2.11.2','./manifest.webmanifest','./icon.svg','./escape-room-bg.jpg',
+  './','./index.html','./styles.css','./nextgen.css?v=2.10.2','./nomi-cose-citta.css?v=2.11.3','./app.js','./nextgen.js?v=2.10.2','./nomi-cose-citta.js?v=2.11.3','./manifest.webmanifest?v=2.11.3','./icon.svg','./escape-room-bg.jpg',
   './assets/home-room.svg','./assets/classic-desk.svg','./assets/future-city.svg','./assets/ng-shiftline.svg','./assets/ng-lumina.svg','./assets/ng-everybody.svg','./assets/ng-another.svg','./assets/ng-alibi.svg'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
