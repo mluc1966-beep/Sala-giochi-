@@ -1,0 +1,19 @@
+{
+  "id": "/Sala-giochi-/app/",
+  "name": "Sala Giochi 2.0",
+  "short_name": "Sala Giochi",
+  "start_url": "/Sala-giochi-/app/",
+  "scope": "/Sala-giochi-/app/",
+  "display": "standalone",
+  "background_color": "#f3f5fb",
+  "theme_color": "#18233b",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "../icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
