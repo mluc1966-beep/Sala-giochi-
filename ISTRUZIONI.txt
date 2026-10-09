@@ -1,21 +1,24 @@
-Sala Giochi v2.11.5 — Nuova icona Classica
+SALA GIOCHI v2.12.0 — REBUS
 
-Nella ROOT del repository sostituisci:
-  index.html
-  manifest.webmanifest
-  sw.js
-  nomi-cose-citta.js
+AGGIUNGERE nella cartella principale:
+- rebus.js
+- rebus.css
 
-Nella ROOT aggiungi:
-  icon-192.png
-  icon-512.png
-  icon-maskable-512.png
+SOSTITUIRE nella cartella principale:
+- index.html
+- sw.js
 
-Nella cartella app/ sostituisci:
-  app/index.html
-  app/manifest.webmanifest
-  app/sw.js
+SOSTITUIRE nella cartella app:
+- app/index.html
+- app/sw.js
 
-Non modificare app.js, nextgen.js, nextgen.css, CSS o assets.
-L’identita PWA (id/start_url/scope) rimane invariata.
-Android puo impiegare tempo ad aggiornare l’icona dell’app installata.
+NON TOCCARE:
+- app.js
+- nextgen.js / nextgen.css
+- nomi-cose-citta.js / nomi-cose-citta.css
+- manifest.webmanifest
+- app/manifest.webmanifest
+- icone e assets
+
+Il nuovo gioco “Rebus” compare nella famiglia Giochi classici.
+Versione visibile in Home: v2.12.0.
