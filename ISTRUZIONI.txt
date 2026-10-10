@@ -1,24 +1,24 @@
-SALA GIOCHI v2.12.0 — REBUS
+SALA GIOCHI v2.12.1 — REBUS ATELIER
 
-AGGIUNGERE nella cartella principale:
+Aggiungere nella root:
 - rebus.js
 - rebus.css
+- rebus_facile_nel_parco.png
+- rebus_italiano_nella_piazza_di_paese.png
+- rebus_difficile_nel_porto_al_chiaro_di_luna.png
+- rebus_difficilissimo_in_biblioteca.png
 
-SOSTITUIRE nella cartella principale:
+Sostituire nella root:
 - index.html
 - sw.js
 
-SOSTITUIRE nella cartella app:
+Sostituire nella cartella app:
 - app/index.html
 - app/sw.js
 
-NON TOCCARE:
-- app.js
-- nextgen.js / nextgen.css
-- nomi-cose-citta.js / nomi-cose-citta.css
-- manifest.webmanifest
-- app/manifest.webmanifest
-- icone e assets
+Non toccare gli altri file.
 
-Il nuovo gioco “Rebus” compare nella famiglia Giochi classici.
-Versione visibile in Home: v2.12.0.
+NOTE:
+- Home versione: v2.12.1
+- Il nuovo Rebus è una versione Atelier con 4 tavole campione, identiche alle anteprime approvate.
+- Il controllo automatico della soluzione è volutamente disattivato: questa fase serve a validare tavole, leggibilità e impianto del gioco.

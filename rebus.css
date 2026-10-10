@@ -1,60 +1,38 @@
-/* Sala Giochi — Rebus v2.12.0 */
-.game-rebus{max-width:1180px}
-.rebus-layout{display:grid;gap:16px;align-items:start}
-.rebus-paper{position:relative;overflow:hidden;background:#f7f0df;color:#171717;border:1px solid #cbbf9f;border-radius:18px;padding:18px;box-shadow:0 14px 36px rgba(0,0,0,.22),inset 0 0 0 5px rgba(255,255,255,.35)}
-.rebus-paper:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;background-image:repeating-linear-gradient(0deg,transparent 0 4px,rgba(92,75,44,.045) 4px 5px)}
-.rebus-paper-head{position:relative;display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
-.rebus-kicker{display:inline-block;font:900 .7rem/1 ui-monospace,monospace;letter-spacing:.2em;border:2px solid #111;padding:5px 8px;margin-bottom:6px}
-.rebus-paper h2{margin:0;font:800 clamp(1.2rem,2vw,1.65rem)/1.1 Georgia,serif}
-.rebus-enum{white-space:nowrap;border:2px solid #111;padding:8px 11px;font:800 .95rem/1 ui-monospace,monospace;background:#fffdf6}
-.rebus-rule{position:relative;height:3px;background:#171717;margin:15px 0 12px}
-.rebus-strip{position:relative;display:flex;align-items:stretch;justify-content:center;gap:10px;min-height:250px;overflow-x:auto;padding:8px 4px 12px;scrollbar-width:thin}
-.rebus-token{flex:0 0 auto;position:relative;display:grid;place-items:center}
-.rebus-figure{width:min(230px,38vw);min-width:170px;border-right:1px dashed #a99f85;padding:5px 13px 28px}
-.rebus-figure:last-child{border-right:0}
-.rebus-art{width:100%;height:190px;display:grid;place-items:center}
-.rebus-art svg{width:100%;height:100%;max-width:195px;color:#141414;filter:drop-shadow(0 1px 0 rgba(255,255,255,.8))}
-.rebus-op{position:absolute;right:9px;top:7px;border:2px solid #111;background:#fffdf6;padding:5px 8px;font:900 .8rem/1 ui-monospace,monospace;transform:rotate(-1deg)}
-.rebus-fig-name{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);padding:3px 8px;border-radius:2px;background:#171717;color:#fff;font:900 .72rem/1.2 ui-monospace,monospace;letter-spacing:.08em}
-.rebus-word{min-width:110px;align-self:center;padding:20px 10px}
-.rebus-word span{font:900 clamp(1.1rem,2.2vw,1.55rem)/1 ui-monospace,monospace;letter-spacing:.08em;border-bottom:3px solid #171717;padding:7px 4px}
-.rebus-caption{position:relative;border-top:1px solid #b9ad91;padding-top:8px;text-align:center;font:italic .76rem/1.4 Georgia,serif;color:#625a49}
-.rebus-console{display:grid;gap:11px;border-radius:20px;padding:16px;background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.045));border:1px solid rgba(255,255,255,.12)}
-.rebus-score{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#dbe5f6}.rebus-score span{font-size:.78rem;font-weight:750}.rebus-score strong{font-size:1.45rem;color:var(--p-a3)}
-.rebus-answer-label{font-size:.78rem;font-weight:850;color:#e8eef9}
-.rebus-answer{width:100%;border:1px solid rgba(255,255,255,.18);background:#fff;color:#182033;border-radius:14px;padding:14px 15px;font-size:1.05rem;font-weight:800;letter-spacing:.02em;outline:none;text-transform:uppercase}
-.rebus-answer:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--p-a2) 30%,transparent);border-color:var(--p-a2)}
-.rebus-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rebus-actions .primary{grid-column:1/-1}
-.rebus-feedback{min-height:64px;padding:12px 13px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#d7e2f3;line-height:1.45}
-.rebus-feedback.wrong{background:rgba(255,94,91,.11);border-color:rgba(255,94,91,.25)}
-.rebus-feedback.hint{background:rgba(255,209,102,.10);border-color:rgba(255,209,102,.22)}
-.rebus-feedback.ok{background:rgba(75,220,142,.12);border-color:rgba(75,220,142,.28)}
-.rebus-feedback.revealed{background:rgba(255,255,255,.08)}
-.rebus-solution-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;font-weight:900;color:var(--p-a3)}
-.rebus-solution{font-size:1.28rem;font-weight:950;color:#fff;margin:4px 0 8px}
-.rebus-reading{font-size:.84rem;color:#d8e2f2}
-.rebus-reveal{border:0;background:transparent;color:#aebbd0;text-decoration:underline;padding:5px;font-size:.76rem}
-.rebus-reveal:disabled,.rebus-actions button:disabled{opacity:.45}
-.art-rebus .sg2-classic-icon{font-family:Georgia,serif}
 
-@media(min-width:800px){
-  .rebus-layout{grid-template-columns:minmax(0,1.75fr) minmax(280px,.75fr)}
-  .rebus-console{position:sticky;top:12px}
-  .rebus-paper{padding:22px}
-  .rebus-strip{min-height:310px}
-  .rebus-art{height:235px}
-  .rebus-figure{min-width:205px;width:min(250px,24vw)}
+/* Sala Giochi 2.0 — Rebus Atelier v2.12.1 */
+.game-rebus{max-width:1280px}
+.rebus-atelier{display:grid;gap:16px;align-items:start}
+.atelier-board-card,.atelier-panel{background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:16px;box-shadow:0 18px 40px rgba(0,0,0,.18)}
+.atelier-board-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:12px}
+.atelier-kicker{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(240,194,83,.14);color:var(--p-a3);font-size:.72rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.atelier-board-head h2{margin:0 0 4px;font-size:clamp(1.15rem,2vw,1.6rem);line-height:1.1}
+.atelier-board-head p{margin:0;color:#cfd9ea;font-size:.92rem;line-height:1.4}
+.atelier-schema{white-space:nowrap;border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.08);font-weight:900;color:#fff;letter-spacing:.06em}
+.atelier-board-button{position:relative;display:block;width:100%;padding:0;border:0;background:transparent;border-radius:18px;overflow:hidden;cursor:zoom-in}
+.atelier-board-button img{display:block;width:100%;height:auto;border-radius:18px;background:#fff}
+.atelier-zoom-chip{position:absolute;right:12px;bottom:12px;padding:8px 12px;border-radius:999px;background:rgba(10,12,18,.72);backdrop-filter:blur(8px);color:#fff;font-size:.78rem;font-weight:800}
+.atelier-panel h3{margin:0 0 10px;font-size:1.1rem}
+.atelier-note{margin:0 0 12px;color:#d8e2f0;line-height:1.45}
+.atelier-panel label{display:block;margin-bottom:8px;color:#e7eef9;font-size:.82rem;font-weight:850}
+.atelier-answer{width:100%;padding:14px 15px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:#fff;color:#142034;font-size:1rem;font-weight:700;outline:none}
+.atelier-answer:focus{border-color:var(--p-a2);box-shadow:0 0 0 3px color-mix(in srgb,var(--p-a2) 28%,transparent)}
+.atelier-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.atelier-actions .primary{grid-column:1/-1}
+.atelier-feedback{margin-top:12px;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#d8e2f1;min-height:84px;line-height:1.48}
+.atelier-reading{background:rgba(83,160,255,.10);border-color:rgba(83,160,255,.24)}
+.atelier-solution{background:rgba(240,194,83,.10);border-color:rgba(240,194,83,.22)}
+.atelier-zoom-dialog{padding:0;border:0;background:transparent;max-width:min(95vw,1300px);width:95vw}
+.atelier-zoom-dialog::backdrop{background:rgba(0,0,0,.75);backdrop-filter:blur(3px)}
+.atelier-zoom-wrap{position:relative;padding:20px;border-radius:22px;background:#0f1727}
+.atelier-zoom-wrap img{display:block;width:100%;height:auto;border-radius:16px;background:#fff}
+.atelier-zoom-close{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:999px;border:0;background:rgba(15,23,39,.85);color:#fff;font-size:1.6rem;line-height:1;cursor:pointer}
+.art-rebus .sg2-classic-icon{font-family:Georgia,serif}
+@media (min-width:900px){
+  .rebus-atelier{grid-template-columns:minmax(0,1.75fr) minmax(320px,.8fr)}
+  .atelier-panel{position:sticky;top:12px}
 }
-@media(min-width:1100px){
-  .rebus-paper{padding:25px}
-  .rebus-strip{gap:14px}
-  .rebus-figure{min-width:220px}
-}
-@media(max-width:799px){
-  .rebus-paper{border-radius:16px;padding:14px 10px}
-  .rebus-paper-head{padding:0 4px}
-  .rebus-strip{justify-content:flex-start;min-height:225px}
-  .rebus-figure{width:185px;min-width:185px}
-  .rebus-art{height:165px}
-  .rebus-word{min-width:90px}
+@media (max-width:899px){
+  .atelier-board-card,.atelier-panel{padding:14px}
+  .atelier-board-head{flex-direction:column}
+  .atelier-schema{align-self:flex-start}
 }
