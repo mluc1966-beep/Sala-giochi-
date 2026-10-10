@@ -1,24 +1,19 @@
-SALA GIOCHI v2.12.1 — REBUS ATELIER
+SALA GIOCHI v2.13.0 — REBUS, PRIMA SERIE
 
-Aggiungere nella root:
+AGGIUNGERE nella root:
+- rebus_01.jpg ... rebus_12.jpg
+
+SOSTITUIRE nella root:
 - rebus.js
 - rebus.css
-- rebus_facile_nel_parco.png
-- rebus_italiano_nella_piazza_di_paese.png
-- rebus_difficile_nel_porto_al_chiaro_di_luna.png
-- rebus_difficilissimo_in_biblioteca.png
-
-Sostituire nella root:
 - index.html
 - sw.js
 
-Sostituire nella cartella app:
+SOSTITUIRE nella cartella app:
 - app/index.html
 - app/sw.js
 
-Non toccare gli altri file.
+NON TOCCARE gli altri file.
 
-NOTE:
-- Home versione: v2.12.1
-- Il nuovo Rebus è una versione Atelier con 4 tavole campione, identiche alle anteprime approvate.
-- Il controllo automatico della soluzione è volutamente disattivato: questa fase serve a validare tavole, leggibilità e impianto del gioco.
+Il gioco contiene 12 tavole complete: 3 per livello.
+Controllo soluzione, aiuti, prima lettura, punteggio e avanzamento della serie sono attivi.

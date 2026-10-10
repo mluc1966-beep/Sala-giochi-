@@ -1,179 +1,175 @@
 "use strict";
 
-/* Sala Giochi 2.0 — Rebus Atelier
-   v2.12.1: 4 tavole campione illustrate, identiche alle anteprime approvate. */
+/* Sala Giochi 2.0 — Rebus, prima serie
+   v2.13.0: 12 tavole illustrate complete, 3 per livello. */
 (() => {
-  const REBUS_VERSION='2.12.1';
+  const VERSION='2.13.0';
   const GAME_ID='rebus';
+  const PROGRESS_KEY='sala_giochi_rebus_serie1_v1';
 
   GAME_NAMES[GAME_ID]='Rebus';
   ICONS[GAME_ID]='✒';
   DEFAULT_GAME_PALETTES[GAME_ID]='gold';
 
   GAME_HELP[GAME_ID]={
-    title:'Rebus Atelier',
-    goal:'Valutare tavole illustrate complete, in stile enigmistica italiana classica, direttamente dentro l\'app.',
+    title:'Rebus',
+    goal:'Ricostruisci la frase finale leggendo la scena, le azioni e le sigle stampate nella tavola.',
     steps:[
-      'Scegli un livello per aprire una tavola campione reale, identica all’anteprima approvata.',
-      'Tocca la tavola per ingrandirla a tutto schermo e verificare nitidezza e leggibilità.',
-      'Usa Taccuino per annotare ipotesi, sillabe e possibili letture.',
-      'Con Aiuto 1, Aiuto 2, Prima lettura e Soluzione puoi verificare il meccanismo proposto della tavola.',
-      'Questa è una versione atelier: serve a validare qualità grafica e impostazione del gioco, prima di creare il pacchetto definitivo di rebus.'
+      'Osserva prima tutta la scena: figure, azioni e posizione delle sigle fanno parte del rebus.',
+      'Lo schema numerico indica la lunghezza delle parole della soluzione finale.',
+      'Scrivi la frase completa e premi “Controlla”. Maiuscole, accenti e apostrofi non sono obbligatori.',
+      'Aiuto 1 orienta sulla scena; Aiuto 2 chiarisce il meccanismo senza dare tutta la risposta.',
+      '“Prima lettura” mostra come si concatenano i segmenti del rebus; usala solo se sei bloccato.',
+      'Dopo la soluzione puoi passare alla tavola successiva dello stesso livello.'
     ],
     tips:[
-      'Le tavole sono immagini complete: non vengono più ricostruite da piccoli SVG.',
-      'La resa è pensata soprattutto per tablet, ma con zoom leggibile anche su smartphone.',
-      'Dopo la tua approvazione, da qui si passerà a un primo set di rebus giocabili completi.'
+      'Punteggio iniziale: 100. Risposta errata −8, Aiuto 1 −12, Aiuto 2 −18, Prima lettura −25.',
+      'Rivelare direttamente la soluzione chiude la tavola con 0 punti.',
+      'Questa prima serie contiene 12 tavole: 3 per ciascun livello.'
     ]
   };
 
-  const BOARDS={
-    easy:{
-      kicker:'Tavola campione',
-      title:'Facile · Nel parco',
-      img:'rebus_facile_nel_parco.png',
-      schema:'(4, 5)',
-      subtitle:'Prima prova di tavola classica con scena unica illustrata.',
-      help1:'Concentrati sui due elementi marcati: il libro con la sigla “LI” e il cane con la lettera “C”.',
-      help2:'La tavola è volutamente semplice: serve soprattutto a verificare la resa grafica della scena, del tratto e delle lettere integrate.',
-      reading:'Bozza di lettura atelier: “LI + C + cane”.',
-      solution:'Soluzione atelier provvisoria: tavola campione per validazione grafica. La lettura definitiva sarà fissata nella versione completa del gioco.'
-    },
-    medium:{
-      kicker:'Tavola campione',
-      title:'Medio · Nella piazza di paese',
-      img:'rebus_italiano_nella_piazza_di_paese.png',
-      schema:'(3, 5, 5)',
-      subtitle:'Scena più ricca, con personaggi e più lettere distribuite nell’illustrazione.',
-      help1:'Osserva i quattro nuclei principali: LA sul giornale, V sull’astuccio del musicista, P nel cesto della donna e GA presso il gatto.',
-      help2:'Qui il rebus comincia a essere “di scena”: non conta solo l’oggetto, ma anche il ritmo con cui leggi gli elementi da sinistra a destra.',
-      reading:'Bozza di lettura atelier: “LA + V + P + GA”, da integrare con i soggetti rappresentati.',
-      solution:'Soluzione atelier provvisoria: tavola campione intermedia. In questa fase l’obiettivo è approvare il livello qualitativo della scena e della distribuzione delle lettere.'
-    },
-    hard:{
-      kicker:'Tavola campione',
-      title:'Difficile · Nel porto al chiaro di luna',
-      img:'rebus_difficile_nel_porto_al_chiaro_di_luna.png',
-      schema:'(4, 2, 6, 5)',
-      subtitle:'Composizione adulta, atmosfera narrativa e più punti di lettura.',
-      help1:'I marcatori principali sono P sul pescatore, RO nel mazzo di rose, LE sul baule e SC sulla scala.',
-      help2:'In un rebus di questo tipo la scena non è decorativa: l’ambientazione portuale crea il tono, mentre i segmenti devono essere letti in successione coerente.',
-      reading:'Bozza di lettura atelier: “P + RO + LE + SC”, integrata dalle figure e dalla scena.',
-      solution:'Soluzione atelier provvisoria: tavola difficile di validazione. Serve a giudicare composizione, eleganza del tratto e densità enigmistica.'
-    },
-    extreme:{
-      kicker:'Tavola campione',
-      title:'Difficilissimo · In biblioteca',
-      img:'rebus_difficilissimo_in_biblioteca.png',
-      schema:'(5, 4, 3, 6, 4)',
-      subtitle:'Tavola complessa con molti elementi, da usare come modello per il livello alto.',
-      help1:'Leggi i gruppi evidenziati: P sul busto, LA sulla lampada, O sull’orologio, ST sul libro, M sul globo, R sull’armatura, G sulla gabbia, TI sul gatto, VA sul baule.',
-      help2:'Qui il valore della tavola sta nella vera stratificazione visiva: molte figure, molta atmosfera, molte possibilità di costruzione enigmistica.',
-      reading:'Bozza di lettura atelier: “P + LA + O + ST + M + R + G + TI + VA”.',
-      solution:'Soluzione atelier provvisoria: tavola di riferimento per il livello difficilissimo. Dopo il tuo ok verranno fissate lettura e soluzione definitive in rebus completi.'
-    }
+  const PUZZLES={
+    easy:[
+      {id:1,img:'rebus_01.jpg',title:'Nel parco',schema:'7, 2, 5',solution:'LEGGERE AL PARCO',aliases:[],
+       help1:'La donna sta compiendo un’azione molto precisa; la sigla RE completa quella parola.',
+       help2:'Dopo l’azione trovi AL e l’ambientazione della scena.',reading:'LEGGE + RE / AL / PARCO'},
+      {id:2,img:'rebus_02.jpg',title:'Gatto goloso',schema:'8, 2, 9',solution:'ANNUSARE IL FORMAGGIO',aliases:[],
+       help1:'Il gatto non sta mangiando: usa il naso. La sigla RE completa il verbo.',
+       help2:'Dopo il verbo c’è IL; il grande alimento davanti al gatto dà l’ultima parola.',reading:'ANNUSA + RE / IL / FORMAGGIO'},
+      {id:3,img:'rebus_03.jpg',title:'Partita insolita',schema:'7, 3, 5',solution:'GIOCARE COL LEONE',aliases:['GIOCARE CON IL LEONE'],
+       help1:'Il tennista sta compiendo l’azione base del suo sport; RE completa il verbo.',
+       help2:'COL è già indicato: l’ultimo soggetto è il grande felino sulla destra.',reading:'GIOCA + RE / COL / LEONE'}
+    ],
+    medium:[
+      {id:4,img:'rebus_04.jpg',title:'Notizie in piazza',schema:'8, 2, 8',solution:'LEGGENDO IL GIORNALE',aliases:[],
+       help1:'Osserva cosa fa l’uomo col quotidiano. La sigla NDO trasforma l’azione.',
+       help2:'Dopo il gerundio viene IL e poi l’oggetto che tiene tra le mani.',reading:'LEGGE + NDO / IL / GIORNALE'},
+      {id:5,img:'rebus_05.jpg',title:'Il cane e lo stivale',schema:'5, 6, 4, 7',solution:'DORME VICINO ALLO STIVALE',aliases:[],
+       help1:'Il cane è sdraiato e tranquillo: descrivi prima ciò che sta facendo.',
+       help2:'Le due targhette centrali danno la relazione spaziale con l’oggetto sulla destra.',reading:'DORME / VICINO / ALLO / STIVALE'},
+      {id:6,img:'rebus_06.jpg',title:'Sul molo',schema:'7, 3, 4',solution:'PESCARE DAL MOLO',aliases:[],
+       help1:'L’uomo usa una canna: la sua azione più naturale è il primo segmento.',
+       help2:'RE completa il verbo; DAL precede il luogo da cui sta pescando.',reading:'PESCA + RE / DAL / MOLO'}
+    ],
+    hard:[
+      {id:7,img:'rebus_07.jpg',title:'Concerto privato',schema:'9, 7, 4, 6',solution:'SUONATORE DAVANTI ALLA STATUA',aliases:[],
+       help1:'Il musicista SUONA; la sigla TORE trasforma l’azione nel nome della persona.',
+       help2:'Poi conta la posizione reciproca tra il musicista e la figura marmorea.',reading:'SUONA + TORE / DAVANTI / ALLA / STATUA'},
+      {id:8,img:'rebus_08.jpg',title:'Verso la cima',schema:'7, 5, 2, 9',solution:'SALENDO VERSO LO STAMBECCO',aliases:[],
+       help1:'L’escursionista SALE: aggiungi la sigla NDO.',
+       help2:'VERSO LO è già indicato; resta da riconoscere l’animale di montagna.',reading:'SALE + NDO / VERSO / LO / STAMBECCO'},
+      {id:9,img:'rebus_09.jpg',title:'In cucina',schema:'8, 3, 2, 7',solution:'CUOCENDO PER LA SIGNORA',aliases:[],
+       help1:'Il cuoco CUOCE; la sigla NDO completa il gerundio.',
+       help2:'PER LA introduce la persona sulla destra.',reading:'CUOCE + NDO / PER / LA / SIGNORA'}
+    ],
+    extreme:[
+      {id:10,img:'rebus_10.jpg',title:'Il cavaliere',schema:'10, 5, 2, 5',solution:'CAVALCANDO VERSO IL POZZO',aliases:[],
+       help1:'Il personaggio non è semplicemente “a cavallo”: descrivi l’azione che sta compiendo e aggiungi NDO.',
+       help2:'La seconda targa indica la direzione; il manufatto di pietra sulla destra dà l’ultima parola.',reading:'CAVALCA + NDO / VERSO / IL / POZZO'},
+      {id:11,img:'rebus_11.jpg',title:'Studio con compagnia',schema:'9, 2, 5, 3, 5',solution:'STUDIANDO IL MONDO COL GATTO',aliases:['STUDIANDO IL MONDO CON IL GATTO'],
+       help1:'L’uomo STUDIA: la sigla NDO completa il gerundio.',
+       help2:'IL introduce ciò che il globo rappresenta; COL introduce l’animale accanto a lui.',reading:'STUDIA + NDO / IL / MONDO / COL / GATTO'},
+      {id:12,img:'rebus_12.jpg',title:'Sguardo sul mare',schema:'9, 2, 4, 2, 7',solution:'GUARDANDO IL MARE DA LONTANO',aliases:[],
+       help1:'La donna osserva l’orizzonte: parti dal verbo GUARDA e aggiungi NDO.',
+       help2:'IL introduce ciò che ha davanti; l’ultima targa completa la distanza della scena.',reading:'GUARDA + NDO / IL / MARE / DA / LONTANO'}
+    ]
   };
+
+  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function norm(s){return String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[’']/g,' ').replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+  function loadProgress(){try{return JSON.parse(localStorage.getItem(PROGRESS_KEY)||'{}')}catch{return{}}}
+  function saveProgress(p){localStorage.setItem(PROGRESS_KEY,JSON.stringify(p))}
+  function levelState(level){const p=loadProgress();p[level]??={next:0,solved:[],best:{}};return [p,p[level]]}
 
   const oldStartGame=startGame;
   startGame=function(game,level,opts={}){
-    if(game!==GAME_ID) return oldStartGame(game,level,opts);
-    activeSaved=false;
-    activeGame=game;
-    activeLevel=level;
-    activeSessionTracked=false;
+    if(game!==GAME_ID)return oldStartGame(game,level,opts);
+    activeSaved=false;activeGame=game;activeLevel=level;activeSessionTracked=false;
     activeNoteKey=noteKeyFor(game,level);
-    setHeader(GAME_NAMES[game], LEVEL_NAMES[level]);
-    renderBoard(level);
+    setHeader(GAME_NAMES[game],LEVEL_NAMES[level]);
+    const [p,s]=levelState(level);
+    const pool=PUZZLES[level]||PUZZLES.easy;
+    s.next=Math.max(0,Math.min(pool.length-1,s.next||0));saveProgress(p);
+    renderPuzzle(level,s.next);
   };
 
-  function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function renderPuzzle(level,index){
+    stopTimer();activeStart=Date.now();startTimer();
+    const pool=PUZZLES[level]||PUZZLES.easy;
+    const q=pool[index%pool.length];
+    let score=100,mistakes=0,used1=false,used2=false,usedReading=false,finished=false;
+    const [progress,state]=levelState(level);
+    const solvedCount=new Set(state.solved||[]).size;
 
-  function renderBoard(level){
-    stopTimer(); activeStart=Date.now();
-    const b=BOARDS[level] || BOARDS.easy;
-    const body=`<div class="rebus-atelier">
-      <section class="atelier-main">
-        <div class="atelier-board-card">
-          <div class="atelier-board-head">
-            <div>
-              <div class="atelier-kicker">${esc(b.kicker)}</div>
-              <h2>${esc(b.title)}</h2>
-              <p>${esc(b.subtitle)}</p>
-            </div>
-            <div class="atelier-schema">${esc(b.schema)}</div>
-          </div>
-          <button id="atelierZoomBtn" type="button" class="atelier-board-button" aria-label="Ingrandisci la tavola">
-            <img src="${esc(b.img)}" alt="${esc(b.title)}">
-            <span class="atelier-zoom-chip">🔍 Tocca per ingrandire</span>
-          </button>
-        </div>
+    const body=`<div class="rebus-game">
+      <section class="rebus-stage">
+        <div class="rebus-stage-head"><div><span class="rebus-series">PRIMA SERIE · TAVOLA ${index+1}/3</span><h2>${esc(q.title)}</h2></div><div class="rebus-schema">${esc(q.schema)}</div></div>
+        <button id="rebusZoomBtn" class="rebus-board" type="button" aria-label="Ingrandisci la tavola"><img src="${q.img}" alt="Rebus ${q.id}: ${esc(q.title)}"><span>🔍 Ingrandisci</span></button>
       </section>
-
-      <aside class="atelier-side">
-        <div class="atelier-panel">
-          <h3>Area di prova</h3>
-          <p class="atelier-note">Questa è una <b>versione atelier</b>: serve a validare tavola, leggibilità e impostazione del gioco.</p>
-          <label for="atelierAnswer">Ipotesi di soluzione</label>
-          <input id="atelierAnswer" class="atelier-answer" autocomplete="off" placeholder="Scrivi qui la tua ipotesi...">
-          <div class="atelier-actions">
-            <button id="atelierCheck" class="primary" type="button">Controlla</button>
-            <button id="atelierHelp1" class="secondary" type="button">Aiuto 1</button>
-            <button id="atelierHelp2" class="secondary" type="button">Aiuto 2</button>
-            <button id="atelierReading" class="secondary" type="button">Prima lettura</button>
-            <button id="atelierSolution" class="secondary" type="button">Soluzione</button>
-          </div>
-          <div id="atelierFeedback" class="atelier-feedback">Usa questa schermata per valutare se la tavola funziona davvero dentro l’app.</div>
-        </div>
+      <aside class="rebus-play-panel">
+        <div class="rebus-score-row"><span>Punti</span><strong id="rebusScore">100</strong><small>${solvedCount}/3 risolti</small></div>
+        <label for="rebusAnswer">Soluzione</label>
+        <input id="rebusAnswer" class="rebus-answer" autocomplete="off" autocapitalize="characters" placeholder="Scrivi la frase completa">
+        <button id="rebusCheck" class="primary wide" type="button">Controlla</button>
+        <div class="rebus-help-grid"><button id="rebusHelp1" class="secondary" type="button">Aiuto 1 · −12</button><button id="rebusHelp2" class="secondary" type="button">Aiuto 2 · −18</button><button id="rebusReading" class="secondary" type="button">Prima lettura · −25</button><button id="rebusReveal" class="secondary danger" type="button">Rivela soluzione</button></div>
+        <div id="rebusFeedback" class="rebus-feedback">Osserva l’intera scena e usa lo schema ${esc(q.schema)}.</div>
       </aside>
     </div>
-    <dialog id="atelierZoom" class="atelier-zoom-dialog">
-      <div class="atelier-zoom-wrap">
-        <button id="atelierZoomClose" class="atelier-zoom-close" type="button" aria-label="Chiudi">×</button>
-        <img src="${esc(b.img)}" alt="${esc(b.title)} ingrandita">
-      </div>
-    </dialog>`;
-
+    <dialog id="rebusZoom" class="rebus-zoom"><div><button id="rebusZoomClose" type="button">×</button><img src="${q.img}" alt="Rebus ingrandito"></div></dialog>`;
     app.innerHTML=gameShell(GAME_ID,level,body);
-    const feedback=document.getElementById('atelierFeedback');
-    const answer=document.getElementById('atelierAnswer');
-    const zoom=document.getElementById('atelierZoom');
-    document.getElementById('atelierZoomBtn').onclick=()=> zoom.showModal();
-    document.getElementById('atelierZoomClose').onclick=()=> zoom.close();
-    zoom.addEventListener('click',(e)=>{ if(e.target===zoom) zoom.close(); });
 
-    document.getElementById('atelierCheck').onclick=()=>{
-      const val=(answer.value||'').trim();
-      feedback.className='atelier-feedback';
-      feedback.innerHTML= val
-        ? 'Controllo automatico <b>disattivato volutamente</b> in questa versione atelier. Usa gli aiuti per valutare la tavola e il meccanismo.'
-        : 'Prima scrivi almeno una tua ipotesi o una possibile lettura.';
-    };
-    document.getElementById('atelierHelp1').onclick=()=>{feedback.className='atelier-feedback'; feedback.textContent=b.help1;};
-    document.getElementById('atelierHelp2').onclick=()=>{feedback.className='atelier-feedback'; feedback.textContent=b.help2;};
-    document.getElementById('atelierReading').onclick=()=>{feedback.className='atelier-feedback atelier-reading'; feedback.innerHTML='<b>Prima lettura atelier</b><br>'+esc(b.reading);};
-    document.getElementById('atelierSolution').onclick=()=>{feedback.className='atelier-feedback atelier-solution'; feedback.innerHTML='<b>Nota sulla soluzione</b><br>'+esc(b.solution);};
-    answer.focus();
+    const answer=document.getElementById('rebusAnswer'),feedback=document.getElementById('rebusFeedback'),scoreEl=document.getElementById('rebusScore');
+    const zoom=document.getElementById('rebusZoom');
+    document.getElementById('rebusZoomBtn').onclick=()=>zoom.showModal();
+    document.getElementById('rebusZoomClose').onclick=()=>zoom.close();
+    zoom.onclick=e=>{if(e.target===zoom)zoom.close()};
+
+    const refresh=()=>scoreEl.textContent=Math.max(0,score);
+    const valid=v=>[q.solution,...(q.aliases||[])].some(x=>norm(x)===norm(v));
+    const lock=()=>['rebusCheck','rebusHelp1','rebusHelp2','rebusReading','rebusReveal'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=true});
+    function finish(ok,revealed=false){
+      if(finished)return;finished=true;stopTimer();lock();answer.disabled=true;
+      const pts=revealed?0:Math.max(0,score);
+      feedback.className=`rebus-feedback ${ok?'ok':'solution'}`;
+      feedback.innerHTML=`<b>${ok?'✓ Soluzione corretta':'Soluzione'}</b><strong>${esc(q.solution)}</strong><span>Prima lettura: ${esc(q.reading)}</span><div class="rebus-finish-actions"><button id="rebusNext" class="primary" type="button">${index<2?'Tavola successiva →':'Risultato serie →'}</button><button id="rebusHome" class="secondary" type="button">Home</button></div>`;
+      if(ok){const [p,s]=levelState(level);s.solved=[...new Set([...(s.solved||[]),q.id])];s.best??={};s.best[q.id]=Math.max(s.best[q.id]||0,pts);s.next=index<2?index+1:0;saveProgress(p);endRecord(GAME_ID,level,pts,true,{series:1,board:q.id});}
+      else endRecord(GAME_ID,level,0,false,{series:1,board:q.id});
+      document.getElementById('rebusNext').onclick=()=>{if(index<2)renderPuzzle(level,index+1);else renderSeriesResult(level)};
+      document.getElementById('rebusHome').onclick=()=>renderHome();
+    }
+    function check(){
+      const v=answer.value.trim();if(!v){feedback.textContent='Scrivi prima una soluzione.';answer.focus();return}
+      if(valid(v)){finish(true,false);return}
+      mistakes++;score=Math.max(10,score-8);refresh();feedback.className='rebus-feedback wrong';feedback.textContent=mistakes===1?'Non è ancora la frase giusta. Ricontrolla schema e sigle.':mistakes===2?'Ancora no: prova a leggere la scena come un verbo o una relazione, non solo come nomi di oggetti.':'Risposta non corretta. Puoi usare un aiuto o la prima lettura.';answer.select();
+    }
+    document.getElementById('rebusCheck').onclick=check;answer.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();check()}};
+    document.getElementById('rebusHelp1').onclick=()=>{if(used1)return;used1=true;score=Math.max(10,score-12);refresh();feedback.className='rebus-feedback hint';feedback.textContent=q.help1;document.getElementById('rebusHelp1').disabled=true};
+    document.getElementById('rebusHelp2').onclick=()=>{if(used2)return;used2=true;score=Math.max(10,score-18);refresh();feedback.className='rebus-feedback hint';feedback.textContent=q.help2;document.getElementById('rebusHelp2').disabled=true};
+    document.getElementById('rebusReading').onclick=()=>{if(usedReading)return;usedReading=true;score=Math.max(10,score-25);refresh();feedback.className='rebus-feedback reading';feedback.innerHTML=`<b>Prima lettura</b><br>${esc(q.reading)}`;document.getElementById('rebusReading').disabled=true};
+    document.getElementById('rebusReveal').onclick=()=>{if(confirm('Rivelare la soluzione? Questa tavola terminerà con 0 punti.'))finish(false,true)};
+    setTimeout(()=>answer.focus(),80);
+  }
+
+  function renderSeriesResult(level){
+    stopTimer();const [p,s]=levelState(level);const pool=PUZZLES[level]||PUZZLES.easy;const solved=new Set(s.solved||[]);const best=s.best||{};const total=pool.reduce((a,q)=>a+(best[q.id]||0),0);
+    app.innerHTML=resultShell(GAME_ID,level,`<div class="rebus-series-result"><div class="result-emblem">✒</div><div class="session-kicker">Prima serie · ${LEVEL_NAMES[level]}</div><h2>${solved.size===3?'Serie completata':'Serie in corso'}</h2><p>Hai risolto <b>${solved.size}/3</b> tavole. Miglior punteggio complessivo: <b>${total}/300</b>.</p><div class="rebus-result-grid">${pool.map((q,i)=>`<div><span>${i+1}</span><b>${esc(q.title)}</b><strong>${best[q.id]??'—'}</strong></div>`).join('')}</div><div class="actions"><button class="primary" onclick="startGame('rebus','${level}')">Gioca la serie</button><button class="secondary" onclick="renderHome()">Home</button></div></div>`);
   }
 
   const oldClassicFamily=window.renderClassicFamily;
   window.renderClassicFamily=function(){
     oldClassicFamily();
-    const grid=document.querySelector('.sg2-classic-grid');
-    if(!grid || grid.querySelector('.art-rebus')) return;
-    const btn=document.createElement('button');
-    btn.className='sg2-classic-card art-rebus';
-    btn.onclick=()=>chooseDifficulty(GAME_ID);
-    btn.innerHTML=`<span class="sg2-classic-icon">✒</span><strong>Rebus</strong><small>Atelier · 4 tavole campione</small>`;
-    const ncc=grid.querySelector('.art-nomicosacitta');
-    if(ncc) ncc.after(btn); else grid.appendChild(btn);
+    const grid=document.querySelector('.sg2-classic-grid');if(!grid)return;
+    let btn=grid.querySelector('.art-rebus');
+    if(!btn){btn=document.createElement('button');btn.className='sg2-classic-card art-rebus';btn.onclick=()=>chooseDifficulty(GAME_ID);const ncc=grid.querySelector('.art-nomicosacitta');if(ncc)ncc.after(btn);else grid.appendChild(btn)}
+    btn.innerHTML=`<span class="sg2-classic-icon">✒</span><strong>Rebus</strong><small>12 tavole illustrate · 4 livelli</small>`;
   };
 
-  const oldRenderHome=renderHome;
-  renderHome=function(){
-    oldRenderHome();
-    const v=document.querySelector('.sg2-home-copy .sg2-eyebrow b');
-    if(v) v.textContent=`v${REBUS_VERSION}`;
-  };
+  const oldHome=renderHome;
+  renderHome=function(){oldHome();const v=document.querySelector('.sg2-home-copy .sg2-eyebrow b');if(v)v.textContent=`v${VERSION}`};
+
+  const oldClue=typeof currentClueText==='function'?currentClueText:null;
+  if(oldClue)currentClueText=function(){if(activeGame===GAME_ID){const t=document.querySelector('.rebus-stage-head h2')?.textContent||'Rebus';const s=document.querySelector('.rebus-schema')?.textContent||'';return `${t} · schema ${s}`}return oldClue()};
 
   renderHome();
 })();
