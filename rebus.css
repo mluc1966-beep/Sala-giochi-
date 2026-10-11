@@ -1,4 +1,4 @@
-/* Sala Giochi — Rebus Archivio v2.13.1 */
+/* Sala Giochi — Rebus Archivio v2.14.0 */
 .game-rebus{max-width:1250px}
 .rebus-db-layout{display:grid;gap:16px;align-items:start}
 .rebus-db-card,.rebus-db-panel{border-radius:22px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.045));box-shadow:0 18px 42px rgba(0,0,0,.19);padding:16px}
@@ -9,3 +9,5 @@
 .rebus-db-zoom{border:0;padding:0;background:transparent;max-width:min(96vw,1500px);width:96vw}.rebus-db-zoom::backdrop{background:rgba(0,0,0,.78);backdrop-filter:blur(3px)}.rebus-db-zoom>div{position:relative;padding:18px;border-radius:20px;background:#0c1423}.rebus-db-zoom img{display:block;width:100%;height:auto;border-radius:14px}.rebus-db-zoom button{position:absolute;right:8px;top:8px;width:42px;height:42px;border:0;border-radius:999px;background:rgba(12,20,35,.86);color:#fff;font-size:1.7rem;z-index:2}
 @media(min-width:900px){.rebus-db-layout{grid-template-columns:minmax(0,1.7fr) minmax(310px,.75fr)}.rebus-db-panel{position:sticky;top:12px}}
 @media(max-width:899px){.rebus-db-card,.rebus-db-panel{padding:13px}.rebus-db-head{flex-direction:column}.rebus-db-diagram{align-self:flex-start}.rebus-db-actions{grid-template-columns:1fr 1fr}}
+
+.rebus-db-navigation{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}.rebus-db-navigation button{flex:1;min-width:90px}.rebus-db-count{font-size:.83rem;color:#dbe4f3;text-align:center}.rebus-db-status{font-size:.8rem;color:#dbe4f3;margin-top:8px}.rebus-db-status.error{color:#ffb0b0}.rebus-db-actions .secondary{min-height:42px}.rebus-db-image-button img{object-fit:contain;max-height:75vh}.rebus-db-panel button:disabled{opacity:.5;cursor:not-allowed}
