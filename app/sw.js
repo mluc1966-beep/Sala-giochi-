@@ -1,9 +1,9 @@
-const CACHE='sala-giochi-app-v2.13.1';
+const CACHE='sala-giochi-app-v2.14.0';
 const PHOTO_CACHE='sala-giochi-puzzle-photos-v1';
 const ASSETS=[
-  './','./index.html','./manifest.webmanifest?v=2.13.1',
-  '../styles.css','../nextgen.css?v=2.10.2','../nomi-cose-citta.css?v=2.11.5','../rebus.css?v=2.13.1',
-  '../app.js','../nextgen.js?v=2.10.2','../nomi-cose-citta.js?v=2.11.5','../rebus.js?v=2.13.1','../rebus_archivio_001.png',
+  './','./index.html','./manifest.webmanifest?v=2.14.0',
+  '../styles.css','../nextgen.css?v=2.10.2','../nomi-cose-citta.css?v=2.11.5','../rebus.css?v=2.14.0',
+  '../app.js','../nextgen.js?v=2.10.2','../nomi-cose-citta.js?v=2.11.5','../rebus-config.js?v=2.14.0','../rebus.js?v=2.14.0','../rebus_archivio_001.png',
   '../icon.svg','../icon-192.png','../icon-512.png','../icon-maskable-512.png','../escape-room-bg.jpg',
   '../assets/home-room.svg','../assets/classic-desk.svg','../assets/future-city.svg','../assets/ng-shiftline.svg','../assets/ng-lumina.svg','../assets/ng-everybody.svg','../assets/ng-another.svg','../assets/ng-alibi.svg'
 ];
