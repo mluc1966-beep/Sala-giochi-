@@ -1,11 +1,17 @@
-SALA GIOCHI v2.13.0 — REBUS, PRIMA SERIE
+SALA GIOCHI v2.13.1 — REBUS ARCHIVIO
+
+Nuovo comportamento:
+- Rebus senza livelli di difficoltà.
+- Apertura diretta del record d’archivio.
+- Primo test basato sul record reale EurekaRebus RPC 1869.
+- Aiuti senza spiegazioni elementari sulle regole dei rebus.
 
 AGGIUNGERE nella root:
-- rebus_01.jpg ... rebus_12.jpg
-
-SOSTITUIRE nella root:
 - rebus.js
 - rebus.css
+- rebus_archivio_001.png
+
+SOSTITUIRE nella root:
 - index.html
 - sw.js
 
@@ -13,7 +19,4 @@ SOSTITUIRE nella cartella app:
 - app/index.html
 - app/sw.js
 
-NON TOCCARE gli altri file.
-
-Il gioco contiene 12 tavole complete: 3 per livello.
-Controllo soluzione, aiuti, prima lettura, punteggio e avanzamento della serie sono attivi.
+Non toccare gli altri file.
